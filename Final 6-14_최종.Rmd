@@ -1,0 +1,1325 @@
+---
+title: "Final project"
+output: html_document
+date: "2026-06-21"
+---
+2020170849 정민규, 2022170823 최진규, 2021170871 김찬우
+
+### 국내 방한 외국인 관광객수와 관광수입 예측 모델 
+#### - 대기 오염을 중심으로
+## 1. Introduction 
+현재 관광업은 나날이 성장하며 각광을 받고 있다. 비단 경제 증진 효과 뿐만 아니라 이미지 재고, 고용 창출 등에도 효과적이기에 관광업을 안정적으로 유지함은 중요하다. 더욱이 최근에는 방한 외국인 관광객이 나날이 증가하며 그 중요성이 부각되고 있다. 실제로 2026년 4월 16일 대한민국 정책브리핑의 문화체육관광부 정책 뉴스에 따르면, 올해 1분기 외국인 관광객은 476만 명으로 역대 최대로 나타났다.^[https://www.korea.kr/news/policyNewsView.do?newsId=148962804] 
+ 
+그러나, 겨울철, 봄철에 심해지는 미세먼지는 주요 문제로 자리잡고 있으며 관광업에도 큰 영향을 끼칠 우려가 있다. 기존 선행연구^[김미경 (Olivia Hye Kim). (2021). 미세먼지·초미세먼지가 국내 관광수요에 미치는 영향분석: 국민여행조사자료를 중심으로. 관광연구저널, 35(5), 131–144.]는 미세먼지와 내국인 관광객의 방문자 수, 소비 금액을 중점적으로 연구하였다.실제로 국민을 대상으로 조사한 선행연구의 경우, 거주지의 미세먼지가 ‘나쁨’일 경우 당일 여행 수요가 3.9% 감소하였고 초미세먼지가 ‘나쁨’인 경우 숙박여행의 수요가 5.2%가 감소하였다.  그러나, 본 선행 연구는 횡단면 데이터를 분석하여 전반적인 시계열 흐름을 파악하지 못했으며, 최근 급증하고 있는 해외 관광객에 대해서도 분석하지 않았다. 또한, 본 선행 연구조차도 미세먼지가 관광업에 유의미한 타격을 줄 수 있음에도 불구하고 관련 연구가 2010년대 후반에 와서야 본격적으로 진행되어 분석이 더욱 필요하다고 언급한다. 
+  
+또한, 2019년의 JTBC '전보다 더 심해졌다... 외국인 관광객도 미세먼지 걱정', 연합뉴스의 '안개 아니에요?...들뜬 외국인 관광객들, 미세먼지 무방비' ^[https://news.jtbc.co.kr/article/NB11774639] 기사^[https://www.yna.co.kr/view/AKR20190306174400004]를 참고하여 외국인 관광객에게는 미세먼지에 대한 정보가 잘 알려지지 않았고, 최근에 와서야 인지하는 관광객이 늘어나고 있다고 판단하였다. 현재 시점에서 보다 장기적인 미세먼지와 관광업의 특성을 연구할 필요가 있고, 특히 증가하고 있는 해외관광객의 수와 소비 금액을 분석할 필요가 있다고 판단하여 주제로 선정하였다. 
+  이번 연구의 research question은 다음과 같다. 
+  
+  a. 대기 오염 변수(외생변수)를 고려할 경우, 국내 월별 방한 외국인 관광객수 예측에 도움이 된다. 
+  
+  b. 대기 오염 변수(외생변수)를 고려할 경우, 국내 월별 관광수입 예측에 도움이 된다. 
+  
+  이외에도 The Guardian의 2026년 4월 16일 기사에 따르면, 태국 치앙마이에서도 심각한 대기오염으로 관광업에 타격을 입는 것으로 보고 되고 있다.^[Rebecca Ratcliffe, The Guardian, 2026.04.16., https://www.theguardian.com/world/2026/apr/15/thailand-chiang-mai-tourism-air-pollution-war-price-spikes] 
+
+___
+ 
+## 2. Analysis 
+ 0. 선행 연구와의 차이점
+ 
+기존 선행연구^[김미경 (Olivia Hye Kim). (2021). 미세먼지·초미세먼지가 국내 관광수요에 미치는 영향분석: 국민여행조사자료를 중심으로. 관광연구저널, 35(5), 131–144.]는 미세먼지와 내국인 관광객의 방문자 수, 소비 금액을 중점적으로 연구하였다.실제로 국민을 대상으로 조사한 선행연구의 경우, 거주지의 미세먼지가 ‘나쁨’일 경우 당일 여행 수요가 3.9% 감소하였고 초미세먼지가 ‘나쁨’인 경우 숙박여행의 수요가 5.2%가 감소하였다.  그러나, 본 선행 연구는 횡단면 데이터를 분석하여 전반적인 시계열 흐름을 파악하지 못했으며, 최근 급증하고 있는 해외 관광객에 대해서도 분석하지 않았다. 또한, 본 선행 연구조차도 미세먼지가 관광업에 유의미한 타격을 줄 수 있음에도 불구하고 관련 연구가 2010년대 후반에 와서야 본격적으로 진행되어 분석이 더욱 필요하다고 언급한다.
+
+ 1. 변수 설명
+
+월별 방한 외래관광객 수: 한국관광데이터랩에 있는 관광빅데이터서비스팀의 관광통계/발간보고서의 '연도별 통계(1975년-2025년)' 자료를 사용하였다. 1975년부터 2025년까지의 자료이나 본 프로젝트에서는 2016년 1월부터 2025년 5월까지의 자료를 사용하였다. 2025년 관광수입, 관광지출, 관광수지는 잠정치이다.^[https://datalab.visitkorea.or.kr/site/portal/ex/bbs/View.do?cbIdx=1127&bcIdx=300119&pageIndex=1&tgtTypeCd=&searchKey=&searchKey2=&tabFlag=N&subFlag=N&cateCont=spt01] 
+ 
+월별 관광수입: 위와 동일한 출처의 데이터이다. 단위는 $1,000이다. 
+ 
+대기 오염 성분: 국가데이터처(KOSIS)의 월별 도시별 대기오염도 내부의 자료를 사용하였다. 2015년 1월부터 2025년 6월까지의 월별 데이터이다. 월별 미세먼지(PM10), 월별 초미세먼지(PM2.5), 월별 오존, 월별 일산화탄소, 월별 아황산가스이다. 오존의 경우는 광화학 옥시던트의 하나로 오염물질에 속하며 무색, 무미이다. 호흡기 질환자, 노약자, 어린이들에게 영향이 크므로 주의할 필요가 있다. 일산화탄소 또한 무색, 무취의 맹독성 기체로 교통체증이 심한 도심지역에서 많이 관측된다. 신경계통에 피해를 주며 운동신경, 근육마비 등에 악영향을 끼친다. 아황산가스는 가스상 대기오염물질로 불쾌한 자극적인 냄새가 나는 무색의 불연성 기체다. 각종 구조물의 부식, 생태계와 인간에 악영향을 미치는 특징이 있다.
+ 
+ 2. 기초 통계량 및 Visualization
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6, fig.align = "center")
+```
+
+```{r libraries}
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(tidyr)
+library(lubridate)
+library(zoo)
+library(tseries)
+library(scales)
+library(reshape2)
+library(forecast)
+```
+
+```{r prep-loaders}
+# Load the pre-merged CSV file
+raw <- read_csv("C:/Users/jmg90/OneDrive/바탕 화면/26-1학기 파일/다변량분석/다변량_프로젝트/data/data.csv") %>%
+  mutate(date = as.Date(paste0(year_month, "-01"))) %>%
+  rename(
+    Tourists = inbound_visitors,
+    Receipts = tourism_revenue_usd1000,
+    PM2.5    = `PM2.5_ugm3`,
+    PM10     = PM10_ugm3,
+    CO       = CO_ppm,
+    O3       = O3_ppm,
+    SO2      = SO2_ppm
+  ) %>%
+  arrange(date)
+
+var_order <- c("Tourists", "Receipts", "PM2.5", "PM10", "CO", "O3", "SO2")
+
+# Extract numeric analysis variables only (exclude date)
+df_num <- raw %>% select(all_of(var_order))
+```
+
+
+**2-a. Histogram & Kernel Density Plots**
+```{r histograms, fig.height=7}
+df_num %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "value") %>%
+  ggplot(aes(x = value)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 20, fill = "#5b9bd5", color = "white", alpha = 0.8) +
+  geom_density(color = "#c00000", linewidth = 0.9) +
+  facet_wrap(~variable, scales = "free", ncol = 2) +
+  labs(title = "Histogram with Kernel Density Plot", x = NULL, y = "Density")
+```
+먼저, 각 변수의 빈도와 분포를 알아보기 위해서 기본적인 시각화를 위해서 Histogram과 Kernel Density Plot을 이용하였다. O3, PM10, PM2.5를 비롯한 대부분의 대기 오염 물질은 중앙에 밀집되어 어느정도 정규분포와 유사하게 분포하고 있는 모습을 확인할 수 있다. 
+
+이와 대조적으로, Tourists는 peak가 크게 두 부분으로 나누어져 있는 모습을 확인할 수 있다. 국내 방한 해외 관광객의 수가 극적으로 구분되어 있어 시기상 어떻게 분포되어 있었는지를 보다 세밀하게 파악할 필요가 있어 보인다. Receipts는 Tourists와는 달리 어느정도 정규분포에 가까운 모양새이지만, peak가 크게 두 부분으로 나누어져 있음을 확인할 수 있다. 
+
+**2-b. 결측치 확인**
+```{r missing-check}
+# number and percentage of missing values per variable
+missing_summary <- raw %>%
+  summarise(across(all_of(var_order), ~sum(is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "n_missing") %>%
+  mutate(missing_pct = round(100 * n_missing / nrow(raw), 2))
+
+print(as.data.frame(missing_summary))
+
+cat(sprintf("\nTotal observations: %d rows (%s ~ %s)\n",
+            nrow(raw), min(raw$date), max(raw$date)))
+cat(sprintf("Total missing values: %d\n", sum(missing_summary$n_missing)))
+```
+2015년 1월부터 2025년 6월까지의 월별 데이터이며 총 114개의 행을 가지는 것으로 확인하였다. 또한, 결측치는 없는 것으로 확인하였다. 따라서, 별도의 결측치 처리 기법(선형보간, Forward-fill 등)은 이번 프로젝트에서는 사용하지 않는다.
+```{r rolling-compute}
+# ============================================================================
+# For each variable, compute 6 rolling statistics using a 12-month window.
+#   - Rolling Mean   : overall trend (e.g., moving average of stock price)
+#   - Rolling Sum    : cumulative total over the period (e.g., 12-month sum)
+#   - Rolling Max/Min: range of variation / outlier detection within the window
+#   - Rolling SD     : volatility (degree of variance) within the window
+#   - Rolling Median : central tendency robust to extreme values
+# ============================================================================
+WIN <- 12
+rollf <- function(x, fun) zoo::rollapply(x, WIN, fun, align = "center", fill = NA)
+
+roll_long <- raw %>%
+  pivot_longer(all_of(var_order), names_to = "variable", values_to = "value") %>%
+  mutate(variable = factor(variable, levels = var_order)) %>%
+  group_by(variable) %>%
+  arrange(date, .by_group = TRUE) %>%
+  mutate(rolling_mean   = rollf(value, mean),
+         rolling_sum    = rollf(value, sum),
+         rolling_max    = rollf(value, max),
+         rolling_min    = rollf(value, min),
+         rolling_sd     = rollf(value, sd),
+         rolling_median = rollf(value, median)) %>%
+  ungroup()
+```
+**2-c. Visualization of Rolling Statistics**
+```{r rolling-plot, fig.height=8}
+# 3 lines per panel: raw series (grey), rolling mean (blue), rolling SD (red)
+
+roll_long %>%
+  pivot_longer(c(value, rolling_mean, rolling_sd),
+               names_to = "stat", values_to = "v") %>%
+  mutate(stat = recode(stat,
+                       value          = "Raw Series",
+                       rolling_mean   = "Rolling Mean",
+                       rolling_sd     = "Rolling SD"),
+         stat = factor(stat, levels = c("Raw Series", "Rolling Mean", "Rolling SD"))) %>%
+  ggplot(aes(date, v, color = stat, linewidth = stat)) +
+  geom_line(na.rm = TRUE) +
+  facet_wrap(~variable, scales = "free_y", ncol = 2) +
+  scale_color_manual(values = c("Raw Series" = "grey70",
+                                "Rolling Mean" = "steelblue",
+                                "Rolling SD" = "firebrick")) +
+  scale_linewidth_manual(values = c("Raw Series" = 0.4,
+                                    "Rolling Mean" = 0.9,
+                                    "Rolling SD" = 0.9), guide = "none") +
+  labs(title = "Rolling Statistics",
+       subtitle = "window = 12 months",
+       x = NULL, y = NULL, color = NULL) +
+  theme(legend.position = "top")
+```
+**2-d. Rolling Statistics (Summary)**
+```{r rolling-values}
+roll_summary <- roll_long %>%
+  group_by(variable) %>%
+  summarise(
+    raw_mean          = mean(value, na.rm = TRUE),
+    rolling_mean_start = first(na.omit(rolling_mean)),
+    rolling_mean_end   = last(na.omit(rolling_mean)),
+    rolling_mean_min   = min(rolling_mean, na.rm = TRUE),
+    rolling_mean_max   = max(rolling_mean, na.rm = TRUE),
+    rolling_sum_mean   = mean(rolling_sum, na.rm = TRUE),
+    rolling_sd_mean    = mean(rolling_sd, na.rm = TRUE),
+    rolling_median_mean = mean(rolling_median, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(across(where(is.numeric), ~round(., 4)))
+
+print(as.data.frame(roll_summary))
+```
+Windows를 12개월로 설정하여 변수의 이동평균과 이동표준편차를 산출했다. 월별 자료에서 12개월을 window로 설정하였으며 대략적인 시계열의 기초통계량을 파악하였다. 종속변수인 관광객 수(tourists)는 6개 변수 중 변동이 압도적으로 컸다. 이동평균이 약 143만 명에서 시작해 코로나19 시기(2020~2021년)에 최저 56,357명까지 급락한 뒤 2024년에 다시 약 146만 명 수준으로 회복하여, 이동평균의 범위가 5.6만~147만 명으로 편차가 심하다는 사실을을 확인하였다. 이동표준편차 또한 약 18.8만으로 높아 분산 역시 안정적이지 않았다. 또 다른 종속변수인 관광수입(receipts) 또한 약 13억 9615만 달러에서 시작하여 코로나19시기 (2020~2021년)에 급락한 후 다시 완만하게 회복하는 모양을 보였다. 이동평균 값의 범위가 7억 7851만 달러~17억 6572만 달러로 넓었으며 이동표준편차 또한 2억 2677만 달러로 적지 않아 변동이 컸음을 확인할 수 있다. 
+ 
+대기오염 변수 중에서는 아황산가스(SO2)의 이동평균이 0.0046에서 0.0026으로 꾸준히 하락해 뚜렷한 감소세를 보였다. 초미세먼지(PM2.5), 미세먼지(PM10), 일산화탄소(CO)는 세 변수 모두 이동평균이 분석 기간에 걸쳐 완만히 우하향하여 세 항목에 대해서는 대기질이 점진적으로 개선되는 흐름을 보였다. (예: PM2.5 이동평균 26.08→15.92, PM10 46.75→28.92, CO 0.49→0.38). 이들 변수는 이동표준편차의 평균이 각각 5.79, 10.99, 0.076 수준으로 분산은 상대적으로 작았다. 반면 오존(O3)은 이동평균이 0.0272에서 0.0336으로 소폭 상승하는 약한 증가 추세만 보여 6개 변수 중 가장 안정적이었다.
+
+ 3. Stationarity Analysis
+
+**3-a. Train/Test Split & Time series Object**
+
+Before time series modeling, the data is split chronologically: the first 80%
+(91 months) is used for training and the remaining 20% (23 months) for testing. Since time series data is continuous, it was not suffled.
+Stationarity tests, ACF/PACF analysis, and model parameter estimation are all
+performed on the training data only, to prevent data leakage.
+
+```{r train-test-split}
+# Chronological split (80% train, 20% test)
+n_total <- nrow(raw)
+n_train <- floor(n_total * 0.8)
+n_test  <- n_total - n_train
+
+train <- raw[1:n_train, ]
+test  <- raw[(n_train + 1):n_total, ]
+
+cat(sprintf("Train : %s ~ %s (%d months)\n",
+            min(train$date), max(train$date), n_train))
+cat(sprintf("Test  : %s ~ %s (%d months)\n",
+            min(test$date), max(test$date), n_test))
+
+# Build ts objects with frequency = 12 (monthly data)
+start_y <- year(min(train$date))
+start_m <- month(min(train$date))
+mk_ts <- function(x) ts(x, start = c(start_y, start_m), frequency = 12)
+
+# Target series (train)
+tour_ts <- mk_ts(train$Tourists)   # inbound visitors
+rev_ts  <- mk_ts(train$Receipts)   # tourism receipts
+
+# Test vectors (plain numeric for evaluation)
+tour_test <- test$Tourists
+rev_test  <- test$Receipts
+
+# Air quality variable names
+air_vars <- c("PM2.5", "PM10", "CO", "O3", "SO2")
+
+# Helper variables for plotting
+all_dates   <- raw$date
+boundary    <- max(train$date)
+train_idx   <- which(all_dates <= boundary)
+test_idx    <- which(all_dates >  boundary)
+year_starts <- seq(as.Date("2016-01-01"), as.Date("2026-01-01"), by = "year")
+```
+
+**3-b. Inbound Visitors — Classical Decomposition**
+
+In this project, our team applied classical multiplicative decomposition to the inbound visitor training
+series, separating it into trend, seasonal, and irregular components:
+
+$$Y_t = T_t \times S_t \times \varepsilon_t$$
+The multiplicative form is chosen because the seasonal amplitude tends to grow
+with the trend level. The decomposition also helps assess whether a seasonal
+component should be included in the model.
+
+```{r tour-decompose, fig.cap="Multiplicative decomposition of the inbound visitor training series.", fig.height=6}
+tour_dec <- decompose(tour_ts, type = "multiplicative")
+plot(tour_dec, xlab = "")
+```
+
+```{r tour-seasonal-table}
+tour_si <- round(tour_dec$figure, 4)
+names(tour_si) <- month.abb
+
+cat("Monthly seasonal indices (multiplicative):\n")
+cat("  Values > 1.0 = above-average months\n")
+cat("  Values < 1.0 = below-average months\n\n")
+print(tour_si)
+
+cat(sprintf("\nPeak month   : %s (index = %.4f)\n",
+            names(which.max(tour_si)), max(tour_si)))
+cat(sprintf("Trough month : %s (index = %.4f)\n",
+            names(which.min(tour_si)), min(tour_si)))
+cat(sprintf("Irregular SD : %.4f\n", sd(tour_dec$random, na.rm = TRUE)))
+```
+The multiplicative decomposition separates the inbound visitor series into a 
+clear trend, a stable seasonal pattern, and an irregular component. The trend 
+rises through 2019, collapses sharply in 2020 due to COVID-19 border 
+restrictions, and begins recovering from 2022 onward.
+
+The seasonal indices range from 0.8463 (May) to 1.2051 (October), with October 
+as the peak month and May as the trough. This wide spread (roughly ±20% around 
+the mean) confirms a strong and stable seasonal pattern that repeats across all 
+years in the sample.
+
+The irregular SD of 0.2515 is relatively high, driven primarily by the 2020 
+COVID-19 shock — clearly visible as a sharp drop in the random component around 
+that period. This structural break cannot be captured by trend or seasonal 
+structure alone.
+
+The pronounced seasonal pattern provides empirical justification for including 
+a seasonal component $(P, D, Q)_{12}$ in the model. The appropriate seasonal 
+differencing order $D$ will be determined through ACF/PACF analysis.
+
+**3-c. Inbound Visitors — ADF Test**
+
+The Augmented Dickey-Fuller (ADF) test checks for stationarity, which is
+required for ARIMA-family models.
+
+- $H_0$: a unit root exists → **non-stationary**
+- $H_1$: stationary
+- Decision rule: $p < 0.05$ → reject $H_0$ → stationary
+
+We test four versions of the series — raw, first difference, seasonal
+difference (lag 12), and both combined — to determine the differencing order $d$.
+
+```{r adf-function}
+run_adf <- function(x, name) {
+  a0    <- adf.test(x,                       alternative = "stationary")
+  a1    <- adf.test(diff(x),                 alternative = "stationary")
+  a12   <- adf.test(diff(x, lag = 12),       alternative = "stationary")
+  a12_1 <- adf.test(diff(diff(x, lag = 12)), alternative = "stationary")
+
+  data.frame(
+    Series     = c(name,
+                   paste0(name, " - 1st diff"),
+                   paste0(name, " - seasonal diff (lag 12)"),
+                   paste0(name, " - seasonal + 1st diff")),
+    ADF_stat   = round(c(a0$statistic, a1$statistic,
+                         a12$statistic, a12_1$statistic), 3),
+    p_value    = round(c(a0$p.value, a1$p.value,
+                         a12$p.value, a12_1$p.value), 4),
+    Stationary = ifelse(c(a0$p.value, a1$p.value,
+                          a12$p.value, a12_1$p.value) < 0.05,
+                        "Yes (reject H0)", "No (fail to reject)")
+  )
+}
+
+cat("========== ADF Test — Inbound Visitors (Train) ==========\n")
+tour_adf <- run_adf(tour_ts, "Tourists")
+print(tour_adf, row.names = FALSE)
+```
+The ADF test confirms that the raw inbound visitor series is non-stationary 
+(p = 0.7449). First differencing achieves stationarity (p = 0.0285), 
+establishing $d = 1$ as the differencing order. Seasonal differencing alone 
+is insufficient (p = 0.5628), while combining seasonal and first differencing 
+also yields stationarity (p = 0.0464). The seasonal differencing order $D$ 
+will be examined further through ACF/PACF analysis in the next section.
+
+**3-d. Tourism Receipts — Classical Decomposition**
+
+The same multiplicative decomposition is applied to the tourism receipts
+training series.
+
+```{r rev-decompose, fig.cap="Multiplicative decomposition of the tourism revceipts training series.", fig.height=6}
+rev_dec <- decompose(rev_ts, type = "multiplicative")
+plot(rev_dec, xlab = "")
+```
+
+```{r rev-seasonal-table}
+rev_si <- round(rev_dec$figure, 4)
+names(rev_si) <- month.abb
+
+cat("Monthly seasonal indices (multiplicative):\n")
+cat("  Values > 1.0 = above-average months\n")
+cat("  Values < 1.0 = below-average months\n\n")
+print(rev_si)
+
+cat(sprintf("\nPeak month   : %s (index = %.4f)\n",
+            names(which.max(rev_si)), max(rev_si)))
+cat(sprintf("Trough month : %s (index = %.4f)\n",
+            names(which.min(rev_si)), min(rev_si)))
+cat(sprintf("Irregular SD : %.4f\n", sd(rev_dec$random, na.rm = TRUE)))
+``` 
+The decomposition of the tourism receipts series shows a trend that rises 
+through 2019, collapses in 2020, and recovers from 2021 onward — structurally 
+similar to the visitor arrivals series.
+
+However, the seasonal component is noticeably weaker. The seasonal indices 
+range from 0.9173 (July) to 1.0853 (October), a spread of roughly ±8% around 
+the mean — much narrower than the visitor series (±20%, range 0.8463–1.2051). 
+This indicates that tourism receipts is less seasonally driven than visitor 
+counts, possibly reflecting variation in per-visitor spending across months.
+
+The irregular SD of 0.1405 is also lower than that of the visitor series 
+(0.2515), suggesting that trend and seasonal components together explain a 
+larger share of the variance in the receipts series. Both series share October 
+as the peak month, but receipts troughs in July rather than May — implying that 
+autumn visitors tend to spend more per trip than summer visitors.
+
+**3-e. Tourism Receipts — ADF Test**
+
+```{r rev-adf}
+cat("========== ADF Test — Tourism Receipts (Train) ==========\n")
+rev_adf <- run_adf(rev_ts, "Receipts")
+print(rev_adf, row.names = FALSE)
+```
+The ADF results for tourism receipts mirror those of the visitor arrivals series.
+The raw series is non-stationary (p = 0.6592), while first differencing achieves 
+stationarity (p < 0.01). Seasonal differencing alone is insufficient 
+(p = 0.5646), and combining seasonal and first differencing also yields 
+stationarity (p < 0.01). Consistent with the visitor arrivals analysis, $d = 1$ 
+is adopted as the differencing order, with the seasonal order $D$ to be examined 
+through ACF/PACF analysis.
+
+ 4. ACF / PACF Analysis
+
+ACF (Autocorrelation Function) and PACF (Partial Autocorrelation Function) plots
+serve two purposes: (1) determining the seasonal differencing order $D$ by
+inspecting spikes at lags 12, 24, 36, and (2) identifying candidate AR and MA
+orders ($p, q, P, Q$) from the spike patterns after differencing.
+
+**4-a. Inbound Visitors — ACF / PACF**
+
+```{r tour-acf-pacf, fig.height=8, fig.cap="ACF and PACF plots for the inbound visitor series and its differenced versions."}
+par(mfrow = c(4, 2), mar = c(3, 4, 3, 1))
+
+acf(as.numeric(tour_ts),                        lag.max = 36, main = "Raw series — ACF")
+pacf(as.numeric(tour_ts),                       lag.max = 36, main = "Raw series — PACF")
+acf(as.numeric(diff(tour_ts)),                  lag.max = 36, main = "1st diff — ACF")
+pacf(as.numeric(diff(tour_ts)),                 lag.max = 36, main = "1st diff — PACF")
+acf(as.numeric(diff(tour_ts, lag = 12)),        lag.max = 36, main = "Seasonal diff (lag 12) — ACF")
+pacf(as.numeric(diff(tour_ts, lag = 12)),       lag.max = 36, main = "Seasonal diff (lag 12) — PACF")
+acf(as.numeric(diff(diff(tour_ts, lag = 12))),  lag.max = 36, main = "Seasonal + 1st diff — ACF")
+pacf(as.numeric(diff(diff(tour_ts, lag = 12))), lag.max = 36, main = "Seasonal + 1st diff — PACF")
+```
+Due to the COVID-19 shock distorting the ACF/PACF structure, the seasonal 
+differencing order $D$ cannot be reliably determined from the plots alone. 
+Based on the ADF result, $d = 1$ is confirmed. From the Seasonal + 1st diff 
+plots, the ACF shows a significant spike at lag 1 ($q = 1$ candidate) and 
+at lag 12 ($Q = 1$ candidate). The PACF shows spikes at lag 1 ($p = 1$ 
+candidate) and lag 12 ($P = 1$ candidate). The final model orders are 
+determined by `auto.arima()` using AIC as the selection criterion. For your information, dashed blue lines indicate the ±2/sqrt(n) significance bounds that we have learned in Multivariate analysis class. 
+
+**4-b. Tourism Receipts — ACF / PACF**
+
+```{r rev-acf-pacf, fig.height=8, fig.cap="ACF and PACF plots for the tourism receipts series and its differenced versions."}
+par(mfrow = c(4, 2), mar = c(3, 4, 3, 1))
+
+acf(as.numeric(rev_ts),                        lag.max = 36, main = "Raw series — ACF")
+pacf(as.numeric(rev_ts),                       lag.max = 36, main = "Raw series — PACF")
+acf(as.numeric(diff(rev_ts)),                  lag.max = 36, main = "1st diff — ACF")
+pacf(as.numeric(diff(rev_ts)),                 lag.max = 36, main = "1st diff — PACF")
+acf(as.numeric(diff(rev_ts, lag = 12)),        lag.max = 36, main = "Seasonal diff (lag 12) — ACF")
+pacf(as.numeric(diff(rev_ts, lag = 12)),       lag.max = 36, main = "Seasonal diff (lag 12) — PACF")
+acf(as.numeric(diff(diff(rev_ts, lag = 12))),  lag.max = 36, main = "Seasonal + 1st diff — ACF")
+pacf(as.numeric(diff(diff(rev_ts, lag = 12))), lag.max = 36, main = "Seasonal + 1st diff — PACF")
+```
+As with the inbound visitor series, the COVID-19 structural break prevents 
+reliable determination of $D$ from the ACF/PACF plots. Based on the ADF result, 
+$d = 1$ is confirmed.
+
+From the Seasonal + 1st diff plots, both ACF and PACF show no significant 
+spikes at either short lags or seasonal lags (lag 12, 24), suggesting that 
+the differenced series is close to white noise. This implies that simple low-order 
+$(p, q)$ and no seasonal AR or MA components ($P = 0$, $Q = 0$) may be 
+sufficient for the tourism receipts series. This contrasts with the inbound 
+visitor series, where a seasonal AR component was evident in the PACF. 
+The final model orders are determined by `auto.arima()` using AIC as the 
+selection criterion.
+
+ 5. Time Series Modeling
+
+**5-a. Inbound Visitors — Univariate Model Fitting**
+
+We fit four univariate models — AR, MA, ARIMA, and SARIMA — using `auto.arima()`
+with `stepwise = FALSE` and `approximation = FALSE` to ensure a thorough search
+over the candidate order space. AIC is used as the selection criterion.
+
+```{r tour-univariate-fitting}
+cat("[AR]\n")
+tour_m_ar <- auto.arima(tour_ts,
+                max.p = 5, max.q = 0, max.P = 0, max.Q = 0,
+                d = 1, D = 0, seasonal = FALSE,
+                ic = "aic", stepwise = FALSE, approximation = FALSE)
+
+cat("[MA]\n")
+tour_m_ma <- auto.arima(tour_ts,
+                max.p = 0, max.q = 5, max.P = 0, max.Q = 0,
+                d = 1, D = 0, seasonal = FALSE,
+                ic = "aic", stepwise = FALSE, approximation = FALSE)
+
+cat("[ARIMA]\n")
+tour_m_arima <- auto.arima(tour_ts,
+                   max.P = 0, max.Q = 0, D = 0, seasonal = FALSE,
+                   ic = "aic", stepwise = FALSE, approximation = FALSE)
+
+cat("[SARIMA]\n")
+tour_m_sarima <- auto.arima(tour_ts,
+                    seasonal = TRUE,
+                    ic = "aic", stepwise = FALSE, approximation = FALSE)
+
+cat("\n===== Selected Orders =====\n")
+for (k in c("AR", "MA", "ARIMA", "SARIMA")) {
+  m <- list(AR=tour_m_ar, MA=tour_m_ma,
+            ARIMA=tour_m_arima, SARIMA=tour_m_sarima)[[k]]
+  cat(sprintf("%-10s : %s\n", k, paste(arimaorder(m), collapse = ",")))
+}
+```
+
+```{r tour-univariate-comparison}
+tour_eval <- function(model, fc, name) {
+  r    <- as.numeric(residuals(model))
+  pred <- as.numeric(fc$mean)
+  data.frame(
+    Model      = name,
+    Train_RMSE = round(sqrt(mean(r^2)), 2),
+    Train_MAE  = round(mean(abs(r)), 2),
+    Test_RMSE  = round(sqrt(mean((tour_test - pred)^2)), 2),
+    Test_MAE   = round(mean(abs(tour_test - pred)), 2),
+    AIC        = round(AIC(model), 2),
+    BIC        = round(BIC(model), 2)
+  )
+}
+
+tour_cmp_uni <- rbind(
+  tour_eval(tour_m_ar,     forecast(tour_m_ar,     h = n_test), "AR(1,1,0)"),
+  tour_eval(tour_m_ma,     forecast(tour_m_ma,     h = n_test), "MA(0,1,1)"),
+  tour_eval(tour_m_arima,  forecast(tour_m_arima,  h = n_test), "ARIMA(2,1,1)"),
+  tour_eval(tour_m_sarima, forecast(tour_m_sarima, h = n_test), "SARIMA(1,1,0)(1,0,0)[12]")
+)
+
+cat("===== Univariate Model Comparison — Inbound Visitors =====\n")
+print(tour_cmp_uni, row.names = FALSE)
+
+cat(sprintf("\nBest univariate model (lowest Test MAE): %s\n",
+            tour_cmp_uni$Model[which.min(tour_cmp_uni$Test_MAE)]))
+```
+The comparison confirms SARIMA(1,1,0)(1,0,0)[12] as the best univariate model 
+across both in-sample and out-of-sample criteria. It achieves the lowest AIC 
+(2388.30) among all four models, indicating the best goodness-of-fit relative 
+to model complexity. More importantly, it outperforms all competitors by a large 
+margin on the test set (Test MAE: 199,091 vs 291,016 for ARIMA), demonstrating 
+that the seasonal AR component $(P=1)$ is essential for capturing the recurring 
+annual pattern in inbound visitor arrivals.
+
+Note that Train RMSE values are similar across all models, indicating that the 
+performance gap emerges in out-of-sample forecasting where seasonal structure 
+becomes critical. Test MAE is used as the primary evaluation criterion as it 
+treats all forecast errors equally and is more robust to the outlying COVID-19 
+period than RMSE.
+
+**5-b. Inbound Visitors — SARIMAX with Exogenous Variables**
+
+Based on the correlation analysis, SO2 (r = 0.596) and PM2.5 (r = 0.368) 
+show the highest correlations with inbound visitor arrivals. However, since 
+SO2 and PM2.5 are highly correlated with each other (r = 0.678), including 
+both simultaneously risks multicollinearity. Therefore, we fit separate SARIMAX 
+models for each variable. Additionally, a COVID-19 dummy variable (1 during 
+January 2020 -- December 2022, 0 otherwise) is incorporated to account for 
+the structural break caused by border restrictions.
+
+```{r tour-covid-dummy}
+# COVID-19 dummy variable
+train$covid <- ifelse(train$date >= as.Date("2020-01-01") &
+                      train$date <= as.Date("2022-12-01"), 1, 0)
+test$covid  <- ifelse(test$date  >= as.Date("2020-01-01") &
+                      test$date  <= as.Date("2022-12-01"), 1, 0)
+
+cat(sprintf("COVID dummy = 1 in train : %d months\n", sum(train$covid)))
+cat(sprintf("COVID dummy = 1 in test  : %d months\n", sum(test$covid)))
+```
+
+```{r tour-correlation-plot, fig.height=7, fig.cap="Pairwise scatter plots between air quality variables and inbound visitors (train)."}
+tour_plot_data <- train[, c("Tourists", air_vars)]
+
+pairs(tour_plot_data,
+      lower.panel = function(x, y) {
+        points(x, y, pch = 16, cex = 0.6,
+               col = adjustcolor("#2471a3", 0.5))
+        abline(lm(y ~ x), col = "red", lwd = 1.2)
+      },
+      upper.panel = function(x, y) {
+        r <- cor(x, y, use = "complete.obs")
+        usr <- par("usr")
+        text((usr[1]+usr[2])/2, (usr[3]+usr[4])/2,
+             sprintf("r = %.3f", r), cex = 1.2, font = 2)
+      },
+      diag.panel = function(x) {
+        usr <- par("usr")
+        hist(x, freq = FALSE, add = TRUE,
+             col = "lightgrey", border = "white")
+        lines(density(x), col = "red", lwd = 1.2)
+      },
+      main = "Pairwise Correlation — Air Quality vs Inbound Visitors")
+```
+
+```{r tour-correlation-table}
+cat("===== Correlation with Inbound Visitors (Train) =====\n")
+tour_cor_df <- data.frame(
+  Variable    = air_vars,
+  Correlation = sapply(air_vars, function(v)
+    round(cor(train[[v]], train$Tourists, use = "complete.obs"), 3))
+)
+tour_cor_df <- tour_cor_df[order(abs(tour_cor_df$Correlation), decreasing = TRUE), ]
+print(tour_cor_df, row.names = FALSE)
+```
+From the pairwise correlation analysis, SO2 shows the highest correlation 
+with inbound visitor arrivals (r = 0.596), followed by PM2.5 (r = 0.368), 
+CO (r = 0.297), and PM10 (r = 0.296). O3 shows a weak negative correlation 
+(r = -0.163). 
+
+Since SO2 and PM2.5 are the two strongest candidates but are highly correlated 
+with each other (r = 0.678), including both simultaneously risks 
+multicollinearity. Therefore, separate SARIMAX models are fitted for each 
+variable. Additionally, a COVID-19 dummy variable is incorporated in all 
+SARIMAX models to account for the structural break caused by border 
+restrictions during 2020--2022.
+
+```{r standardization}
+# ── Standardize air quality variables based on TRAIN statistics only (avoid leakage) ──
+standardize_train_test <- function(train_vec, test_vec) {
+  mu    <- mean(train_vec)
+  sigma <- sd(train_vec)
+  list(train = (train_vec - mu) / sigma,
+       test  = (test_vec  - mu) / sigma,
+       mu = mu, sigma = sigma)
+}
+
+so2_std  <- standardize_train_test(train$SO2,     test$SO2)
+pm25_std <- standardize_train_test(train$`PM2.5`, test$`PM2.5`)
+
+cat("===== Standardization (train-based) =====\n")
+cat(sprintf("SO2  : mean=%.5f, sd=%.5f\n", so2_std$mu,  so2_std$sigma))
+cat(sprintf("PM2.5: mean=%.5f, sd=%.5f\n", pm25_std$mu, pm25_std$sigma))
+```
+Before fitting SARIMAX models, SO2 and PM2.5 are standardized to address the 
+large difference in scale between the two variables (SO2: 0.002--0.005 ppm, 
+PM2.5: 10--40 μg/m³). Standardization is performed using training set 
+statistics only (mean and standard deviation), with the same parameters applied 
+to the test set to prevent data leakage:
+
+$$z = \frac{x - \mu_{train}}{\sigma_{train}}$$
+
+This ensures that both variables are on a common scale (mean = 0, SD = 1) 
+before entering the model as exogenous regressors, improving numerical 
+stability during parameter estimation.
+
+```{r tour-sarimax-fitting}
+# --- SARIMAX + SO2 + COVID ---
+xreg_so2_covid_train <- cbind(SO2   = so2_std$train,
+                               covid = train$covid)
+xreg_so2_covid_test  <- cbind(SO2   = so2_std$test,
+                               covid = test$covid)
+
+cat("[SARIMAX + SO2 + COVID]\n")
+tour_m_sarimax_so2_covid <- Arima(tour_ts,
+                                   order    = c(1, 1, 0),
+                                   seasonal = list(order = c(1, 0, 0), period = 12),
+                                   xreg     = xreg_so2_covid_train)
+fc_so2_covid <- forecast(tour_m_sarimax_so2_covid, h = n_test, xreg = xreg_so2_covid_test)
+cat(sprintf("Test RMSE : %.2f\n", sqrt(mean((tour_test - as.numeric(fc_so2_covid$mean))^2))))
+cat(sprintf("Test MAE  : %.2f\n", mean(abs(tour_test - as.numeric(fc_so2_covid$mean)))))
+
+# --- SARIMAX + PM2.5 + COVID ---
+xreg_pm25_covid_train <- cbind(PM25  = pm25_std$train,
+                                covid = train$covid)
+xreg_pm25_covid_test  <- cbind(PM25  = pm25_std$test,
+                                covid = test$covid)
+
+cat("\n[SARIMAX + PM2.5 + COVID]\n")
+tour_m_sarimax_pm25_covid <- Arima(tour_ts,
+                                    order    = c(1, 1, 0),
+                                    seasonal = list(order = c(1, 0, 0), period = 12),
+                                    xreg     = xreg_pm25_covid_train)
+fc_pm25_covid <- forecast(tour_m_sarimax_pm25_covid, h = n_test, xreg = xreg_pm25_covid_test)
+cat(sprintf("Test RMSE : %.2f\n", sqrt(mean((tour_test - as.numeric(fc_pm25_covid$mean))^2))))
+cat(sprintf("Test MAE  : %.2f\n", mean(abs(tour_test - as.numeric(fc_pm25_covid$mean)))))
+
+# --- SARIMAX + SO2 + PM2.5 + COVID ---
+xreg_so2_pm25_covid_train <- cbind(SO2   = so2_std$train,
+                                    PM25  = pm25_std$train,
+                                    covid = train$covid)
+xreg_so2_pm25_covid_test  <- cbind(SO2   = so2_std$test,
+                                    PM25  = pm25_std$test,
+                                    covid = test$covid)
+
+cat("\n[SARIMAX + SO2 + PM2.5 + COVID]\n")
+tour_m_sarimax_so2_pm25_covid <- Arima(tour_ts,
+                                        order    = c(1, 1, 0),
+                                        seasonal = list(order = c(1, 0, 0), period = 12),
+                                        xreg     = xreg_so2_pm25_covid_train)
+fc_so2_pm25_covid <- forecast(tour_m_sarimax_so2_pm25_covid,
+                               h    = n_test,
+                               xreg = xreg_so2_pm25_covid_test)
+cat(sprintf("Test RMSE : %.2f\n", sqrt(mean((tour_test - as.numeric(fc_so2_pm25_covid$mean))^2))))
+cat(sprintf("Test MAE  : %.2f\n", mean(abs(tour_test - as.numeric(fc_so2_pm25_covid$mean)))))
+```
+
+```{r tour-final-comparison}
+tour_cmp_final <- data.frame(
+  Model = c("AR(1,1,0)",
+            "MA(0,1,1)",
+            "ARIMA(2,1,1)",
+            "SARIMA(1,1,0)(1,0,0)[12]",
+            "SARIMAX + SO2 + COVID",
+            "SARIMAX + PM2.5 + COVID",
+            "SARIMAX + SO2 + PM2.5 + COVID"),
+  Train_RMSE = c(137180, 137837, 133730, 134162,
+                 round(sqrt(mean(as.numeric(residuals(tour_m_sarimax_so2_covid))^2)), 0),
+                 round(sqrt(mean(as.numeric(residuals(tour_m_sarimax_pm25_covid))^2)), 0),
+                 round(sqrt(mean(as.numeric(residuals(tour_m_sarimax_so2_pm25_covid))^2)), 0)),
+  Train_MAE  = c(89224, 88735, 88438, 89949,
+                 round(mean(abs(as.numeric(residuals(tour_m_sarimax_so2_covid)))), 0),
+                 round(mean(abs(as.numeric(residuals(tour_m_sarimax_pm25_covid)))), 0),
+                 round(mean(abs(as.numeric(residuals(tour_m_sarimax_so2_pm25_covid)))), 0)),
+  Test_RMSE  = c(367726, 375930, 353842, 237046, 213109, 221268, 226742),
+  Test_MAE   = c(303687, 311231, 291016, 199091, 181353, 185478, 189933),
+  AIC        = c(2389.68, 2390.52, 2389.45, 2388.30,
+                 round(AIC(tour_m_sarimax_so2_covid), 2),
+                 round(AIC(tour_m_sarimax_pm25_covid), 2),
+                 round(AIC(tour_m_sarimax_so2_pm25_covid), 2))
+)
+
+cat("===== Final Model Comparison — Inbound Visitors =====\n")
+print(tour_cmp_final, row.names = FALSE)
+
+best_model <- tour_cmp_final$Model[which.min(tour_cmp_final$Test_MAE)]
+cat(sprintf("\nBest model (lowest Test MAE): %s\n", best_model))
+```
+The final comparison table leads to the following conclusions:
+
+1. **Seasonality is essential**: SARIMA(1,1,0)(1,0,0)[12] outperforms all 
+   non-seasonal models by a large margin (Test MAE: 199,091 vs 291,016 for 
+   ARIMA), confirming that the seasonal AR component is critical for capturing 
+   the recurring annual pattern in inbound visitor arrivals.
+
+2. **Air quality variables improve forecast accuracy**: Both SARIMAX models 
+   outperform the baseline SARIMA on the test set. SARIMAX + SO2 + COVID 
+   achieves the best Test MAE (181,353), a **9% improvement** over the baseline 
+   SARIMA (199,091). SARIMAX + PM2.5 + COVID also improves upon the baseline 
+   (Test MAE: 185,475, 7% improvement). This confirms that air quality variables 
+   carry additional predictive information beyond the seasonal and autoregressive 
+   structure of the series.
+
+3. **SO2 outperforms PM2.5 as an exogenous variable**: SARIMAX + SO2 + COVID 
+   achieves a lower Test MAE (181,353) than SARIMAX + PM2.5 + COVID (185,475), 
+   consistent with SO2 showing the highest correlation with inbound visitor 
+   arrivals (r = 0.596 vs r = 0.368 for PM2.5).
+
+4. **Model selection criterion**: AIC values are similar across all models 
+   (range: 2388.30--2391.16), indicating no meaningful difference in 
+   goodness-of-fit relative to model complexity. Therefore, the final model 
+   is selected based on out-of-sample forecast accuracy (Test RMSE and Test MAE) 
+   rather than AIC.
+
+5. **Final model**: **SARIMAX + SO2 + COVID** is selected as the best model 
+   for inbound visitor arrivals based on Test MAE.
+
+**5-c. Tourism Receipts — Univariate Model Fitting**
+
+We repeat the same univariate modeling pipeline for tourism receipts.
+
+```{r rev-univariate-fitting}
+cat("[AR]\n")
+rev_m_ar <- auto.arima(rev_ts,
+                max.p = 5, max.q = 0, max.P = 0, max.Q = 0,
+                d = 1, D = 0, seasonal = FALSE,
+                ic = "aic", stepwise = FALSE, approximation = FALSE)
+
+cat("[MA]\n")
+rev_m_ma <- auto.arima(rev_ts,
+                max.p = 0, max.q = 5, max.P = 0, max.Q = 0,
+                d = 1, D = 0, seasonal = FALSE,
+                ic = "aic", stepwise = FALSE, approximation = FALSE)
+
+cat("[ARIMA]\n")
+rev_m_arima <- auto.arima(rev_ts,
+                   max.P = 0, max.Q = 0, D = 0, seasonal = FALSE,
+                   ic = "aic", stepwise = FALSE, approximation = FALSE)
+
+cat("[SARIMA]\n")
+rev_m_sarima <- auto.arima(rev_ts,
+                    seasonal = TRUE,
+                    ic = "aic", stepwise = FALSE, approximation = FALSE)
+
+cat("\n===== Selected Orders =====\n")
+for (k in c("AR", "MA", "ARIMA", "SARIMA")) {
+  m <- list(AR=rev_m_ar, MA=rev_m_ma,
+            ARIMA=rev_m_arima, SARIMA=rev_m_sarima)[[k]]
+  cat(sprintf("%-10s : %s\n", k, paste(arimaorder(m), collapse = ",")))
+}
+```
+
+```{r rev-eval-model, rev-univariate-comparison}
+rev_eval <- function(model, fc, name) {
+  r    <- as.numeric(residuals(model))
+  pred <- as.numeric(fc$mean)
+  data.frame(
+    Model      = name,
+    Train_RMSE = round(sqrt(mean(r^2)), 2),
+    Train_MAE  = round(mean(abs(r)), 2),
+    Test_RMSE  = round(sqrt(mean((rev_test - pred)^2)), 2),
+    Test_MAE   = round(mean(abs(rev_test - pred)), 2),
+    AIC        = round(AIC(model), 2),
+    BIC        = round(BIC(model), 2)
+  )
+}
+
+rev_cmp_uni <- rbind(
+  rev_eval(rev_m_ar,     forecast(rev_m_ar,     h = n_test), "AR"),
+  rev_eval(rev_m_ma,     forecast(rev_m_ma,     h = n_test), "MA"),
+  rev_eval(rev_m_arima,  forecast(rev_m_arima,  h = n_test), "ARIMA"),
+  rev_eval(rev_m_sarima, forecast(rev_m_sarima, h = n_test), "SARIMA")
+)
+
+cat("===== Univariate Model Comparison — Tourism Receipts =====\n")
+print(rev_cmp_uni, row.names = FALSE)
+
+cat(sprintf("\nBest univariate model (lowest Test MAE): %s\n",
+            rev_cmp_uni$Model[which.min(rev_cmp_uni$Test_MAE)]))
+```
+The univariate model comparison for tourism receipts reveals several notable 
+differences from the inbound visitor arrivals analysis.
+
+First, AR and MA models select identical orders (0,1,0) — essentially a random 
+walk with first differencing — and produce identical performance metrics, 
+suggesting that neither pure AR nor pure MA structure is present beyond simple 
+differencing.
+
+Second, ARIMA and SARIMA select identical orders (2,1,3) with identical 
+performance metrics, confirming that auto.arima() finds no meaningful seasonal 
+structure in the receipts series. This is consistent with the decomposition 
+result, which showed a relatively muted seasonal pattern (index range: 
+0.917--1.085) compared to inbound visitors (0.846--1.205).
+
+The best univariate model is ARIMA(2,1,3) based on Test MAE (302,018). Unlike 
+the inbound visitor series where SARIMA significantly outperformed ARIMA, the 
+tourism receipts series shows no benefit from including a seasonal component.
+
+**5-d. Tourism Receipts — Exogenous Variable Selection**
+
+```{r rev-correlation-plot, fig.height=7, fig.cap="Pairwise scatter plots between air quality variables and tourism receipts (train)."}
+rev_plot_data <- train[, c("Receipts", air_vars)]
+
+pairs(rev_plot_data,
+      lower.panel = function(x, y) {
+        points(x, y, pch = 16, cex = 0.6,
+               col = adjustcolor("#2471a3", 0.5))
+        abline(lm(y ~ x), col = "red", lwd = 1.2)
+      },
+      upper.panel = function(x, y) {
+        r <- cor(x, y, use = "complete.obs")
+        usr <- par("usr")
+        text((usr[1]+usr[2])/2, (usr[3]+usr[4])/2,
+             sprintf("r = %.3f", r), cex = 1.2, font = 2)
+      },
+      diag.panel = function(x) {
+        usr <- par("usr")
+        hist(x, freq = FALSE, add = TRUE,
+             col = "lightgrey", border = "white")
+        lines(density(x), col = "red", lwd = 1.2)
+      },
+      main = "Pairwise Correlation — Air Quality vs Tourism Receipts")
+```
+
+```{r rev-correlation-table}
+cat("===== Correlation with Tourism Receipts (Train) =====\n")
+rev_cor_df <- data.frame(
+  Variable    = air_vars,
+  Correlation = sapply(air_vars, function(v)
+    round(cor(train[[v]], train$Receipts, use = "complete.obs"), 3))
+)
+rev_cor_df <- rev_cor_df[order(abs(rev_cor_df$Correlation), decreasing = TRUE), ]
+print(rev_cor_df, row.names = FALSE)
+```
+The correlation analysis reveals that all five air quality variables show weak 
+association with tourism receipts, with SO2 showing the highest correlation 
+(r = 0.284) followed by PM2.5 (r = 0.209). These values are substantially 
+lower than the correlations observed for inbound visitor arrivals (SO2: r = 0.596, 
+PM2.5: r = 0.368), suggesting that air quality has a weaker linear relationship 
+with tourism receipts than with visitor counts.
+
+Despite the weak correlations, we proceed with fitting ARIMAX models using SO2 
+and PM2.5 separately — consistent with the approach taken for inbound visitors — 
+along with a COVID-19 dummy variable to account for the structural break. 
+The COVID-19 dummy variable takes the value 1 during January 2020 to December 
+2022 and 0 otherwise.
+
+```{r rev-arimax-fitting}
+# --- ARIMAX + SO2 + COVID ---
+rev_xreg_so2_covid_train <- cbind(SO2   = so2_std$train,
+                                   covid = train$covid)
+rev_xreg_so2_covid_test  <- cbind(SO2   = so2_std$test,
+                                   covid = test$covid)
+
+cat("\n[ARIMAX + SO2 + COVID]\n")
+rev_m_arimax_so2_covid <- Arima(rev_ts,
+                                 order = c(2, 1, 3),
+                                 xreg  = rev_xreg_so2_covid_train)
+fc_rev_so2_covid <- forecast(rev_m_arimax_so2_covid, h = n_test, xreg = rev_xreg_so2_covid_test)
+cat(sprintf("Test RMSE : %.2f\n", sqrt(mean((rev_test - as.numeric(fc_rev_so2_covid$mean))^2))))
+cat(sprintf("Test MAE  : %.2f\n", mean(abs(rev_test - as.numeric(fc_rev_so2_covid$mean)))))
+
+# --- ARIMAX + PM2.5 + COVID ---
+rev_xreg_pm25_covid_train <- cbind(PM25  = pm25_std$train,
+                                    covid = train$covid)
+rev_xreg_pm25_covid_test  <- cbind(PM25  = pm25_std$test,
+                                    covid = test$covid)
+
+cat("\n[ARIMAX + PM2.5 + COVID]\n")
+rev_m_arimax_pm25_covid <- Arima(rev_ts,
+                                  order = c(2, 1, 3),
+                                  xreg  = rev_xreg_pm25_covid_train)
+fc_rev_pm25_covid <- forecast(rev_m_arimax_pm25_covid, h = n_test, xreg = rev_xreg_pm25_covid_test)
+cat(sprintf("Test RMSE : %.2f\n", sqrt(mean((rev_test - as.numeric(fc_rev_pm25_covid$mean))^2))))
+cat(sprintf("Test MAE  : %.2f\n", mean(abs(rev_test - as.numeric(fc_rev_pm25_covid$mean)))))
+
+# --- ARIMAX + SO2 + PM2.5 + COVID ---
+rev_xreg_so2_pm25_covid_train <- cbind(SO2   = so2_std$train,
+                                        PM25  = pm25_std$train,
+                                        covid = train$covid)
+rev_xreg_so2_pm25_covid_test  <- cbind(SO2   = so2_std$test,
+                                        PM25  = pm25_std$test,
+                                        covid = test$covid)
+
+cat("\n[ARIMAX + SO2 + PM2.5 + COVID]\n")
+rev_m_arimax_so2_pm25_covid <- Arima(rev_ts,
+                                      order = c(2, 1, 3),
+                                      xreg  = rev_xreg_so2_pm25_covid_train)
+fc_rev_so2_pm25_covid <- forecast(rev_m_arimax_so2_pm25_covid, 
+                                   h    = n_test, 
+                                   xreg = rev_xreg_so2_pm25_covid_test)
+cat(sprintf("Test RMSE : %.2f\n", sqrt(mean((rev_test - as.numeric(fc_rev_so2_pm25_covid$mean))^2))))
+cat(sprintf("Test MAE  : %.2f\n", mean(abs(rev_test - as.numeric(fc_rev_so2_pm25_covid$mean)))))
+
+```
+
+```{r rev-final-comparison}
+rev_cmp_final <- data.frame(
+  Model = c("AR(0,1,0)",
+            "MA(0,1,0)",
+            "ARIMA(2,1,3)",
+            "SARIMA(2,1,3)",
+            "ARIMAX + SO2 + COVID",
+            "ARIMAX + PM2.5 + COVID",
+            "ARIMAX + SO2 + PM2.5 + COVID"),
+  Train_RMSE = c(183831, 183831, 172760, 172760,
+                 round(sqrt(mean(as.numeric(residuals(rev_m_arimax_so2_covid))^2)), 0),
+                 round(sqrt(mean(as.numeric(residuals(rev_m_arimax_pm25_covid))^2)), 0),
+                 round(sqrt(mean(as.numeric(residuals(rev_m_arimax_so2_pm25_covid))^2)), 0)),
+  Train_MAE  = c(136230, 136230, 132498, 132498,
+                 round(mean(abs(as.numeric(residuals(rev_m_arimax_so2_covid)))), 0),
+                 round(mean(abs(as.numeric(residuals(rev_m_arimax_pm25_covid)))), 0),
+                 round(mean(abs(as.numeric(residuals(rev_m_arimax_so2_pm25_covid)))), 0)),
+  Test_RMSE  = c(415635, 415635, 373645, 373645,
+                 374578, 370587, 363253),
+  Test_MAE   = c(344509, 344509, 302018, 302018,
+                 302999, 299241, 291482),
+  AIC        = c(2440.32, 2440.32, 2439.98, 2439.98,
+                 round(AIC(rev_m_arimax_so2_covid), 2),
+                 round(AIC(rev_m_arimax_pm25_covid), 2),
+                 round(AIC(rev_m_arimax_so2_pm25_covid), 2))
+)
+
+cat("===== Final Model Comparison — Tourism Receipts =====\n")
+print(rev_cmp_final, row.names = FALSE)
+
+cat(sprintf("\nBest model (lowest Test MAE): %s\n",
+            rev_cmp_final$Model[which.min(rev_cmp_final$Test_MAE)]))
+```
+The final comparison table for tourism receipts leads to the following conclusions:
+
+1. **Seasonal component is not necessary**: SARIMA and ARIMA select identical 
+   orders (2,1,3) with identical performance metrics, confirming that no 
+   meaningful seasonal structure exists in the tourism receipts series. This 
+   contrasts with the inbound visitor arrivals analysis where the seasonal 
+   component was critical.
+
+2. **Air quality variables improve forecast accuracy**: ARIMAX + SO2 + PM2.5 + 
+   COVID achieves the best Test MAE (291,482), a **3.5% improvement** over the 
+   baseline ARIMA(2,1,3) (302,018). While the improvement is more modest than 
+   that observed for inbound visitor arrivals (9%), it nonetheless confirms that 
+   air quality variables carry additional predictive information for tourism 
+   receipts as well.
+
+3. **Combined air quality variables outperform individual ones**: Including both 
+   SO2 and PM2.5 together (Test MAE: 291,482) yields better results than using 
+   either variable alone (SO2: 302,999, PM2.5: 299,241), suggesting complementary 
+   predictive information between the two pollutants.
+
+4. **Model selection criterion**: AIC values show minimal variation across 
+   models (range: 2439.98--2443.87), indicating no meaningful difference in 
+   goodness-of-fit relative to model complexity. Therefore, the final model 
+   is selected based on out-of-sample forecast accuracy (Test RMSE and Test MAE) 
+   rather than AIC.
+
+5. **Final model**: **ARIMAX + SO2 + PM2.5 + COVID** is selected as the best 
+   model for tourism receipts based on Test MAE.
+
+ 6. Residual Diagnostics
+
+**6-a. Inbound Visitors — SARIMAX + SO2 + COVID**
+
+A well-fitted model should leave residuals that behave like white noise:
+no autocorrelation structure and approximately normal distribution.
+
+```{r tour-residual-plot, fig.height=6, fig.cap="Residual diagnostics for SARIMAX + SO2 + COVID (inbound visitors)."}
+tour_r <- as.numeric(residuals(tour_m_sarimax_so2_covid))
+tour_dates_r <- train$date[(length(train$date) - length(tour_r) + 1):length(train$date)]
+
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+
+# 1) Standardized residual time series
+plot(tour_dates_r, tour_r, type = "l", col = "#c0392b", lwd = 1,
+     main = "Standardized Residuals",
+     xlab = "", ylab = "standardized residuals", xaxt = "n")
+axis(1, at = seq(min(tour_dates_r), max(tour_dates_r), by = "year"),
+     labels = format(seq(min(tour_dates_r), max(tour_dates_r), by = "year"), "%Y"))
+abline(h = 0, lty = 2, col = "grey40")
+
+# 2) ACF of residuals
+acf(tour_r, lag.max = 24, main = "Residuals — ACF")
+
+# 3) Q-Q plot
+qqnorm(tour_r, main = "Residuals — Q-Q Plot")
+qqline(tour_r, col = "red")
+
+# 4) Histogram
+hist(tour_r, breaks = 20, col = "lightgrey", border = "white",
+     main = "Residuals — Histogram", xlab = "Residuals", freq = FALSE)
+curve(dnorm(x, mean = mean(tour_r), sd = sd(tour_r)),
+      add = TRUE, col = "red", lwd = 1.5)
+```
+
+```{r tour-ljungbox}
+# Ljung-Box test across lags 1 to 12
+tour_lb_results <- data.frame(
+  Lag       = 1:12,
+  Statistic = NA_real_,
+  p_value   = NA_real_
+)
+
+for (k in 1:12) {
+  lb <- Box.test(tour_r, lag = k, type = "Ljung-Box")
+  tour_lb_results$Statistic[k] <- round(lb$statistic, 4)
+  tour_lb_results$p_value[k]   <- round(lb$p.value, 4)
+}
+
+tour_lb_results$Result <- ifelse(tour_lb_results$p_value > 0.05,
+                                  "Fail to reject H0 (white noise)",
+                                  "Reject H0 (not white noise)")
+
+print(tour_lb_results, row.names = FALSE)
+
+cat(sprintf("\nAt lag 12: statistic = %.4f, p-value = %.4f\n",
+            tour_lb_results$Statistic[12], tour_lb_results$p_value[12]))
+cat(sprintf("  → %s\n",
+            ifelse(tour_lb_results$p_value[12] > 0.05,
+                   "Fail to reject H0: residuals are white noise.",
+                   "Reject H0: residuals are NOT white noise.")))
+```
+The residual diagnostics for SARIMAX + SO2 + COVID confirm adequate model fit.
+The Ljung-Box test (p > 0.05) fails to reject the null hypothesis of residual
+independence, confirming white noise behavior. The ACF plot shows no significant
+autocorrelation at any lag.
+
+The Q-Q plot and histogram reveal heavy left tails, driven by the large negative
+residual around 2020 — the COVID-19 shock that the dummy variable only partially
+absorbs. This structural break is more extreme than a simple level shift, which
+explains the remaining tail deviation. Outside the COVID period, residuals
+fluctuate randomly around zero with no systematic pattern.
+
+**6-2. Tourism Receipts — ARIMAX + SO2 + PM2.5 + COVID**
+
+```{r rev-residual-plot, fig.height=6, fig.cap="Residual diagnostics for ARIMAX + SO2 + PM2.5 + COVID (tourism receipts)."}
+rev_r <- as.numeric(residuals(rev_m_arimax_so2_pm25_covid))
+rev_dates_r <- train$date[(length(train$date) - length(rev_r) + 1):length(train$date)]
+
+par(mfrow = c(2, 2), mar = c(4, 4, 3, 1))
+
+# 1) Residual time series
+plot(rev_dates_r, rev_r, type = "l", col = "#c0392b", lwd = 1,
+     main = "Residuals — ARIMAX + SO2 + PM2.5 + COVID",
+     xlab = "", ylab = "Residuals", xaxt = "n")
+axis(1, at = seq(min(rev_dates_r), max(rev_dates_r), by = "year"),
+     labels = format(seq(min(rev_dates_r), max(rev_dates_r), by = "year"), "%Y"))
+abline(h = 0, lty = 2, col = "grey40")
+
+# 2) ACF of residuals
+acf(rev_r, lag.max = 24, main = "Residuals — ACF")
+
+# 3) Q-Q plot
+qqnorm(rev_r, main = "Residuals — Q-Q Plot")
+qqline(rev_r, col = "red")
+
+# 4) Histogram
+hist(rev_r, breaks = 20, col = "lightgrey", border = "white",
+     main = "Residuals — Histogram", xlab = "Residuals", freq = FALSE)
+curve(dnorm(x, mean = mean(rev_r), sd = sd(rev_r)),
+      add = TRUE, col = "red", lwd = 1.5)
+```
+
+```{r rev-ljungbox}
+# Ljung-Box test across lags 1 to 12
+rev_lb_results <- data.frame(
+  Lag       = 1:12,
+  Statistic = NA_real_,
+  p_value   = NA_real_
+)
+
+for (k in 1:12) {
+  lb <- Box.test(rev_r, lag = k, type = "Ljung-Box")
+  rev_lb_results$Statistic[k] <- round(lb$statistic, 4)
+  rev_lb_results$p_value[k]   <- round(lb$p.value, 4)
+}
+
+rev_lb_results$Result <- ifelse(rev_lb_results$p_value > 0.05,
+                                 "Fail to reject H0 (white noise)",
+                                 "Reject H0 (not white noise)")
+
+print(rev_lb_results, row.names = FALSE)
+
+cat(sprintf("\nAt lag 12: statistic = %.4f, p-value = %.4f\n",
+            rev_lb_results$Statistic[12], rev_lb_results$p_value[12]))
+cat(sprintf("  → %s\n",
+            ifelse(rev_lb_results$p_value[12] > 0.05,
+                   "Fail to reject H0: residuals are white noise.",
+                   "Reject H0: residuals are NOT white noise.")))
+```
+The residual diagnostics for ARIMAX + SO2 + PM2.5 + COVID confirm adequate 
+model fit. The Ljung-Box test (p > 0.05) strongly fails to reject the null 
+hypothesis of residual independence, confirming white noise behavior. The ACF 
+plot shows no significant autocorrelation at any lag, and the Q-Q plot and 
+histogram indicate that residuals are approximately normally distributed.
+
+**Result: Forecast vs Actual — Inbound Visitors (SARIMAX + SO2 + COVID)**
+
+```{r tour-forecast-plot, fig.cap="SARIMAX + SO2 + COVID: forecast vs actual for inbound visitor arrivals. Shaded area = 80% prediction interval.", fig.height=5}
+fc_tour_final <- forecast(tour_m_sarimax_so2_covid, h = n_test, xreg = xreg_so2_covid_test)
+
+tour_ylim <- range(c(as.numeric(tour_ts),
+                     tour_test,
+                     as.numeric(fc_tour_final$mean),
+                     as.numeric(fc_tour_final$lower[, 1]),
+                     as.numeric(fc_tour_final$upper[, 1])),
+                   na.rm = TRUE) / 1e6
+
+plot(train$date, as.numeric(tour_ts) / 1e6,
+     type = "l", col = "#2471a3", lwd = 1.2,
+     xlim = range(c(train$date, test$date)),
+     ylim = tour_ylim,
+     xlab = "", ylab = "Visitors (millions)",
+     main = "SARIMAX + SO2 + COVID — Inbound Visitors Forecast vs Actual",
+     xaxt = "n")
+
+polygon(c(test$date, rev(test$date)),
+        c(as.numeric(fc_tour_final$lower[, 1]) / 1e6,
+          rev(as.numeric(fc_tour_final$upper[, 1]) / 1e6)),
+        col = adjustcolor("#8e44ad", 0.15), border = NA)
+
+lines(test$date, tour_test / 1e6,
+      col = "#e74c3c", lwd = 1.4)
+lines(test$date, as.numeric(fc_tour_final$mean) / 1e6,
+      col = "#8e44ad", lwd = 1.4, lty = 2)
+
+abline(v = max(train$date), lty = 3, col = "grey40", lwd = 1.2)
+text(max(train$date), tour_ylim[2] * 0.98,
+     " train|test", cex = 0.75, col = "grey40", adj = 0)
+
+axis(1, at = year_starts, labels = format(year_starts, "%Y"))
+
+legend("topleft",
+       legend = c("Train actual", "Test actual", "Test forecast", "80% PI"),
+       col    = c("#2471a3", "#e74c3c", "#8e44ad", "#8e44ad"),
+       lty    = c(1, 1, 2, NA),
+       pch    = c(NA, NA, NA, 15),
+       pt.cex = c(NA, NA, NA, 1.5),
+       bty    = "n", cex = 0.85)
+```
+The SARIMAX + SO2 + COVID forecast tracks the general upward trend of inbound 
+visitor arrivals in the test period reasonably well. The forecast captures the 
+gradual recovery from the COVID-19 shock, and the actual values (red line) 
+remain within the 80% prediction interval for most of the test horizon. However, 
+the model underestimates the sharp month-to-month fluctuations observed in 
+2024--2025, as ARIMA-family models tend to converge toward the mean over longer 
+forecast horizons.
+
+**Result: Forecast vs Actual — Tourism Receipts (ARIMAX + SO2 + PM2.5 + COVID)**
+
+```{r rev-forecast-plot, fig.cap="ARIMAX + SO2 + PM2.5 + COVID: forecast vs actual for tourism receipts. Shaded area = 80% prediction interval.", fig.height=5}
+fc_rev_final <- forecast(rev_m_arimax_so2_pm25_covid, h = n_test, xreg = rev_xreg_so2_pm25_covid_test)
+
+rev_ylim <- range(c(as.numeric(rev_ts),
+                    rev_test,
+                    as.numeric(fc_rev_final$mean),
+                    as.numeric(fc_rev_final$lower[, 1]),
+                    as.numeric(fc_rev_final$upper[, 1])),
+                  na.rm = TRUE) / 1e6
+
+plot(train$date, as.numeric(rev_ts) / 1e6,
+     type = "l", col = "#2471a3", lwd = 1.2,
+     xlim = range(c(train$date, test$date)),
+     ylim = rev_ylim,
+     xlab = "", ylab = "Receipts (USD billions)",
+     main = "ARIMAX + SO2 + PM2.5 + COVID — Tourism Receipts Forecast vs Actual",
+     xaxt = "n")
+
+polygon(c(test$date, rev(test$date)),
+        c(as.numeric(fc_rev_final$lower[, 1]) / 1e6,
+          rev(as.numeric(fc_rev_final$upper[, 1]) / 1e6)),
+        col = adjustcolor("#8e44ad", 0.15), border = NA)
+
+lines(test$date, rev_test / 1e6,
+      col = "#e74c3c", lwd = 1.4)
+lines(test$date, as.numeric(fc_rev_final$mean) / 1e6,
+      col = "#8e44ad", lwd = 1.4, lty = 2)
+
+abline(v = max(train$date), lty = 3, col = "grey40", lwd = 1.2)
+text(max(train$date), rev_ylim[2] * 0.98,
+     " train|test", cex = 0.75, col = "grey40", adj = 0)
+
+axis(1, at = year_starts, labels = format(year_starts, "%Y"))
+
+legend("topleft",
+       legend = c("Train actual", "Test actual", "Test forecast", "80% PI"),
+       col    = c("#2471a3", "#e74c3c", "#8e44ad", "#8e44ad"),
+       lty    = c(1, 1, 2, NA),
+       pch    = c(NA, NA, NA, 15),
+       pt.cex = c(NA, NA, NA, 1.5),
+       bty    = "n", cex = 0.85)
+```
+The ARIMAX + SO2 + PM2.5 + COVID forecast captures the general level of tourism 
+receipts in the test period but fails to track the high volatility observed in 
+the actual series. The forecast quickly converges to a flat line around 1.3 
+billion USD, while actual receipts fluctuates sharply between 1.1 and 2.1 
+billion. The wide 80% in predictio interval reflects the high residual variance 
+inherited from the COVID-19 structural break in the training data. The high 
+short-term volatility in the test period suggests that post-pandemic spending 
+patterns have shifted in ways the model cannot fully anticipate from historical 
+structure alone.
+
+ 7. 군집화
+```{r clustering}
+library(cluster)
+library(factoextra)
+
+# Standardization
+cluster_vars <- c("Tourists", "Receipts", "PM2.5", "PM10", "CO", "O3", "SO2")
+X <- scale(raw[, cluster_vars])
+rownames(X) <- format(raw$date, "%Y-%m")
+```
+clustering 진행 전에 변수의 range 차이가 심하므로 scaling을 하였다.
+scale() 함수를 이용하여 평균 0, 표준편차가 1인 표준정규분포로 변수를 정규화하였다. 
+
+**7-a. 군집 수(k) 결정 (Internal Measures: SSE - Elbow point)**
+```{r clustering-k}
+set.seed(42)
+fviz_nbclust(X, kmeans, method = "wss")        + ggtitle("Optimal number of clusters")
+```
+Clustering 기법 중 K-means 기법을 사용하였다. K-means는 널리 쓰이는 clustering 알고리즘 중 하나로 Partitional Clustering에 해당한다. 각 data는 사전에 정해진 군집의 개수(k)에 따라 가장 가까운 centroid에 할당된다. 알고리즘이 간단하고 다양한 형태의 데이터에 적용이 가능하여 널리 사용된다. 
+
+K-means는 미리 군집의 개수, k를 정해야 하는데 이번 프로젝트에서는 Internal Measures 중 하나로써 SSE를 사용하였다. SSE는 군집의 centroid와 데이터 간의 거리의 제곱의 합인데 k에 따라 SSE를 시각화하여 elbow point를 군집으로 선정한다. 본 프로젝트에서는 k=3으로 선정하였다. 
+
+**7-b. K-means 군집화**
+```{r clustering-kmeans}
+K <- 3
+set.seed(42)
+km <- kmeans(X, centers = K, nstart = 25)
+raw$cluster <- factor(km$cluster)
+
+cat(sprintf("Cluster sizes: %s\n", paste(table(km$cluster), collapse = ", ")))
+
+# Standardized means (z-score): positive = above average, negative = below average
+z_profile <- aggregate(X, by = list(cluster = km$cluster), FUN = mean)
+print(round(z_profile, 2), row.names = FALSE)
+
+# Raw-unit means
+raw_profile <- aggregate(raw[, cluster_vars], by = list(cluster = km$cluster), FUN = mean)
+print(round(raw_profile, 4), row.names = FALSE)
+
+# Automatic interpretation
+for (k in seq_len(K)) {
+  zrow <- as.numeric(z_profile[z_profile$cluster == k, cluster_vars])
+  names(zrow) <- cluster_vars
+  high <- names(sort(zrow[zrow >  0.5], decreasing = TRUE))
+  low  <- names(sort(zrow[zrow < -0.5]))
+  cat(sprintf("Cluster %d (%d months): High[%s] / Low[%s]\n",
+              k, sum(km$cluster == k),
+              paste(high, collapse = ","), paste(low, collapse = ",")))
+}
+```
+Cluster1: 총 29개의 달이 해당하며 SO2, PM2.5, CO, PM10이 모두 높고 방한 외국인 관광객 수도 많은 그룹이다. 상대적으로 Receipts가 저조하며 O3도 낮다. 대기 오염 농도가 높은 군집인 것으로 보아 겨울~봄철 대기오염 그룹으로 추정하였다. '겨울-봄형' 그룹으로 분류하였으며 난방 연료 사용 증가, 대기 정체, 편서풍의 영향에 의한 대기오염 농도 증가 시기로 분류하였다. 
+
+Cluster2: 총 49개의 달이 해당하며 높은 Receipts, Tourists와 낮은 PM2.5를 보이는 그룹이다. 상대적으로 O3는 가장 높은 그룹이다. 따라서, '여름-초가을형' 그룹으로 분류하였으며 대기 오염이 가장 덜하고 방한 외국인 관광객 수와 관광 수입이 높은 시기이다. 
+
+Cluster3: 총 36개의 달이 해당하며 낮은 Tourists, Receipts, SO2를 보인다. 이 그룹은 이번 프로젝트에서 사용한 데이터의 특성 상 COVID-19 시기에 해당하는 그룹으로 판단하였다. 
+
+**7-c. 시각화**
+```{r clustering-viz, fig.height=6}
+fviz_cluster(km, data = X, geom = "point", ellipse.type = "convex",
+             palette = "Set2", ggtheme = theme_minimal()) +
+  ggtitle(sprintf("K-means Clustering (k=%d)", K))
+
+ggplot(raw, aes(x = factor(month(date)), fill = cluster)) +
+  geom_bar() +
+  labs(x = "Month", y = "Count", title = "Monthly Cluster Distribution") +
+  scale_fill_brewer(palette = "Set2") + theme_minimal()
+
+ggplot(raw %>% filter(cluster == 3), aes(x = date, y = 1, fill = cluster)) +
+  geom_tile(height = 0.8, fill = "#E78AC3") +
+  scale_x_date(date_breaks = "6 months", date_labels = "%Y-%m") +
+  labs(x = NULL, y = NULL, title = "Group 3 Timeline") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+시각화 결과는 다음과 같다. 
+
+Monthly Cluster Distribution: 각 군집이 1월~12월 중 어느 달에 몇 번씩 나타났는지를 시각화하였다. Group3의 경우, 1년 내내 일정한 수치인 것을 보니 위에서 분석하였듯이 COVID-19 시기를 따로 그룹으로 분류하였다고 판단하였다. 위에서 언급하였듯이, 4월~10월 경의 여름~초가을 시기가 Group2에 해당하는 모습을 관찰할 수 있다. 이와 대조적으로, 11월~3월 경의 겨울~봄 시기에는 Group1의 비중이 늘어나는 모습을 관찰할 수 있다. 
+
+Group3 Timeline: 전체 시기에서 Group3가 어느 군집에 속하는지를 추가로 분석하였다. 거의 대부분 COVID-19이 확산하여 방한 외국인 관광객 수와 관광 수입이 대폭 감소하고 산업 생산이 축소되었던 2020년~2023년 경에 분포되어 있음을 확인할 수 있다. 따라서, Group3는 이번 프로젝트에서는 주요하게 다루지는 않도록 한다. 
+
+**개선안**
+'여름-초가을'형에 비해 '겨울-봄형'이 O3를 제외한 대기오염 물질 농도가 높고 방한 외국인 관광객수에 비해 Receipts는 낮은 시기이므로 관광 수입을 증진할 필요성이 있는 그룹이라고 판단하였다. 따라서, 
+따라서, 본 프로젝트에서는 몇 가지 persona를 설정하여 해당 persona에 맞춘 관광 개선안을 제시한다.
+
+Persona1: 민감 호흡기 영유아 동반 가족 관광객 
+
+취약점: 서울특별시 대기환경정보에 따르면, 고농도 SO2에 의한 천식, 폐렴과 PM2.5, PM10에 따른 호흡기질환이 가장 우려되는 그룹이다. 
+
+대응책: 영유아가 선호하는 체험 위주 실내 공간에 가족 동반 할인을 적용하거나 '오늘의 추천 일정' 앱 알림 서비스를 제공하여 박물관, 과학관, 실내 전시, 실내 놀이시설로 유도하여 대응한다. 
+
+Persona2: 노년 부부 관광객 
+
+취약점: 서울특별시 대기환경정보에 따르면, 고농도 PM2.5, PM10에 따른 심장질환과 호흡기질환으로 조기 사망률이 높아지는 위험 그룹이다. 또한, 고농도 CO2는 뇌손상과 운동신경, 사고능력 저하 등에 영향을 미친다. 
+
+대응책: 도보 이동을 줄이고 대중교통 이동을 이용하도록 유도하는 방안이 있다. 또한, 심장질환에 무리가 가는 그룹이므로 야외 활동을 원할 경우에도, 저강도 코스의 트래킹 코스를 선택하도록 유도한다.
+
+Persona3: 아웃도어 액티비티 관광객 
+
+취약점: CO에 따른 근육마비, 운동 신경 저하가 우려되며 PM2.5, PM10에 의한 신진대사 저하, SO2에 의한 폐렴, 기관지염, 천식 등에 직접적으로 영향을 받는 그룹이다. 
+
+대응책: 실내 클라이밍, 실내 사격 등 실내 액티비티 활동으로 유도한다. 앱 서비스를 제공하여 일정 시간 이상은 실외 활동을 자제하도록 다국어로 제공하는 방법도 유용하다.
+
+___
+
+## 3. Conclusions
+1. 대기 오염 요인을 고려한 관광 수입 모델은 있었다. -> Receipts가 더 뚜렷했다.
+
+2. 위에서 결론 낸 거 요약해서 적으면 됨
+
+**한계점**
+1. 데이터 수 부족
+
+2. COVID-19 요인이 너무 강해서 COVID-19이 없는 측정값으로 재시도 할 필요가 있음
+
+___
+
+## 4. References

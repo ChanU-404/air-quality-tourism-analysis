@@ -1,0 +1,309 @@
+---
+title: "Rolling Statistics 기반 정상성 진단"
+subtitle: "월별 관광객 수 · 대기오염 변수 (이동평균 / 이동표준편차)"
+author: "Chanu"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    theme: flatly
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6, fig.align = "center")
+```
+
+# 개요
+
+이 문서는 **rolling statistics(이동통계)** 로 시계열의 **정상성(stationarity)** 을
+눈으로 진단한다. 핵심 아이디어는 간단하다.
+
+- **이동평균(rolling mean)** 이 시간에 따라 위/아래로 흐르면 → **평균이 일정하지 않음 = 추세 존재(비정상)**.
+- **이동표준편차(rolling std)** 가 시간에 따라 커지거나 작아지면 → **분산이 일정하지 않음(이분산, 비정상)**.
+- 둘 다 대체로 수평이면 → 정상에 가깝다.
+
+종속변수(`tourists`)와 5개 독립변수(`pm25, pm10, co, o3, so2`) 전부에 대해
+**윈도우 = 12개월(연 단위)** 로 계산한다.
+
+```{r libraries}
+library(tidyverse)
+library(lubridate)
+library(readxl)     # 관광객 xlsx 읽기
+library(zoo)        # rollapply, 시간 보간
+library(tseries)    # adf.test (정상성 검정 companion)
+```
+
+```{r korean-font}
+# ============================================================================
+# [한글 폰트] ggplot 그래프에서 한글이 깨지지 않게 OS별 기본 폰트를 지정.
+#   - macOS : "AppleGothic" (기본 설치)
+#   - Windows: "Malgun Gothic"(맑은 고딕)
+#   - Linux : "NanumGothic" (없으면 sudo apt install fonts-nanum)
+#  설정 후 theme_set으로 모든 그래프 기본 폰트를 한 번에 바꾼다.
+# ============================================================================
+KFONT <- switch(Sys.info()[["sysname"]],
+                Darwin  = "AppleGothic",
+                Windows = "Malgun Gothic",
+                "NanumGothic")
+theme_set(theme_minimal(base_family = KFONT))
+par(family = KFONT)                 # base R 그래프용
+options(scipen = 100)               # 큰 수가 1e+06 처럼 안 나오게(관광객 수 가독성)
+```
+
+# 실제 데이터 로드
+
+> 이 Rmd와 엑셀 파일들이 **같은 폴더**에 있으면 `data_dir <- "."` 그대로. 아니면 절대경로로.
+
+```{r prep-loaders}
+# ============================================================================
+# [로더] 오염물질 .xls 5개는 SpreadsheetML(XML) 형식이라 readxl로 못 읽으므로 전용 파서.
+#   - 헤더에 '2016.01'이 있는 행을 찾고, 바로 다음 '총계' 행의 월별 전국평균을 추출.
+#   - 관광객 xlsx는 '연도 × 월' 표라 reshape_monthly로 long 변환.
+# ============================================================================
+# ── 데이터 폴더 자동 탐색 ──────────────────────────────────────────────
+#  콘솔에서 한 줄씩 실행하면 작업디렉터리가 Rmd 폴더가 아니라 "."가 안 먹는다.
+#  아래 후보 경로 중 엑셀이 실제로 있는 폴더를 자동으로 고른다.
+#  ※ 그래도 못 찾으면 data_dir에 본인 폴더 절대경로를 직접 적어줄 것.
+KEY_FILE <- "초미세먼지.xls"                      # 존재 확인용 대표 파일
+# RStudio면 현재 Rmd가 있는 폴더도 후보에 추가(없으면 "" 반환)
+rmd_dir <- tryCatch(dirname(rstudioapi::getSourceEditorContext()$path),
+                    error = function(e) "")
+cand_dirs <- c(
+  "/Users/chanu/Desktop/다변량분석플젝",           # ← 사용자 폴더(절대경로)
+  ".",                                            # 작업디렉터리(Rmd와 같은 폴더면 OK)
+  "~/Desktop/다변량분석플젝",                      # iCloud 데스크탑 동기화 시
+  "~/Library/Mobile Documents/com~apple~CloudDocs/Desktop/다변량분석플젝",
+  rmd_dir                                         # 현재 Rmd 위치(RStudio)
+)
+data_dir <- NULL
+for (d in cand_dirs) {
+  if (nzchar(d) && file.exists(file.path(d, KEY_FILE))) { data_dir <- normalizePath(d); break }
+}
+if (is.null(data_dir))
+  stop("데이터 폴더를 찾지 못했습니다. 엑셀 파일이 모두 다운로드(로컬 저장)되어 있는지 확인하고,\n",
+       "  data_dir <- \"본인_폴더_절대경로\" 로 직접 지정하세요. 현재 작업디렉터리: ", getwd())
+cat("데이터 폴더:", data_dir, "\n")
+cat("폴더 내 파일:\n"); print(list.files(data_dir, pattern = "\\.(xls|xlsx)$"))
+
+p <- function(f) file.path(data_dir, f)
+
+parse_poll <- function(path) {
+  con <- file(path, open = "r", encoding = "CP949")
+  lines <- readLines(con, warn = FALSE); close(con)
+  txt <- paste(lines, collapse = "\n")
+  blocks <- strsplit(txt, "<Row\\b", perl = TRUE)[[1]][-1]
+  cell_texts <- function(b) {
+    m <- gregexpr("(?s)(?<=<Data[^>]{0,200}>).*?(?=</Data>)", b, perl = TRUE)
+    trimws(regmatches(b, m)[[1]])
+  }
+  hi  <- which(grepl("2016\\.01", blocks))[1]
+  hdr <- cell_texts(blocks[hi]); tot <- cell_texts(blocks[hi + 1])
+  is_m  <- grepl("^\\d{4}\\.\\d{2}", hdr)
+  dates <- as.Date(paste0(sub("\\.", "-", sub("\\s.*", "", hdr[is_m])), "-01"))
+  vals  <- suppressWarnings(as.numeric(gsub("[^0-9.]", "", tot[is_m])))
+  n <- min(length(dates), length(vals))
+  tibble(date = dates[seq_len(n)], value = vals[seq_len(n)]) %>%
+    filter(!is.na(value)) %>% arrange(date)
+}
+
+reshape_monthly <- function(path, sheet, month_cols) {
+  df <- readxl::read_excel(path, sheet = sheet, col_names = FALSE)
+  out <- list()
+  for (i in seq_len(nrow(df))) {
+    yr <- suppressWarnings(as.integer(df[[1]][i]))
+    if (is.na(yr) || yr < 1975 || yr > 2025) next
+    for (k in seq_along(month_cols)) {
+      val <- suppressWarnings(as.numeric(df[[month_cols[k]]][i]))
+      out[[length(out)+1]] <- tibble(date = as.Date(sprintf("%d-%02d-01", yr, k)), value = val)
+    }
+  }
+  bind_rows(out) %>% arrange(date)
+}
+```
+
+```{r prep-data}
+pm25 <- parse_poll(p("초미세먼지.xls"))     %>% rename(pm25 = value)
+pm10 <- parse_poll(p("월별_미세먼지.xls"))  %>% rename(pm10 = value)
+co   <- parse_poll(p("일산화탄소.xls"))     %>% rename(co   = value)
+o3   <- parse_poll(p("오존.xls"))           %>% rename(o3   = value)
+so2  <- parse_poll(p("아황산가스.xls"))     %>% rename(so2  = value)
+tour <- reshape_monthly(p("연도별통계(1975-2025) (1).xlsx"),
+                        "방한 외래관광객", 4:15) %>%
+        rename(tourists = value) %>% filter(!is.na(tourists))
+
+raw <- tour %>%
+  inner_join(pm25, "date") %>% inner_join(pm10, "date") %>%
+  inner_join(co,   "date") %>% inner_join(o3,   "date") %>%
+  inner_join(so2,  "date") %>% arrange(date)
+
+# 결측 보간(시간 선형). 이상치 캡은 적용하지 않음(원 변동을 그대로 진단).
+clean <- raw %>%
+  mutate(across(where(is.numeric), ~zoo::na.approx(., x = date, na.rm = FALSE))) %>%
+  mutate(across(where(is.numeric), ~zoo::na.fill(., c("extend", NA, "extend"))))
+
+cat(sprintf("분석 기간: %s ~ %s  (%d개월)\n",
+            min(clean$date), max(clean$date), nrow(clean)))
+var_order <- c("tourists","pm25","pm10","co","o3","so2")   # 패널 순서
+head(clean)
+```
+
+# Rolling Statistics (윈도우 = 12개월)
+
+```{r rolling-compute}
+# ============================================================================
+# 각 변수에 대해 12개월 윈도우로 6가지 이동통계를 계산한다.
+#   · 이동평균(mean)     : 전체적인 추세 파악 (예: 주가 이동평균선)
+#   · 이동합계(sum)      : 일정 기간 누적합 (예: 12개월 누적)
+#   · 이동최대/최소(max/min): 기간 내 변동 범위·이상치 파악
+#   · 이동표준편차(sd)   : 기간 내 변동성(분산 정도) 측정
+#   · 이동중앙값(median) : 극단값 영향을 줄인 중심경향치
+#   - rollapply(..., align="center", fill=NA): 곡선이 원계열과 시점 정렬되도록 중심정렬.
+#     (윈도우를 다 못 채우는 양 끝 11개월은 NA가 되어 그래프/표에서 자연히 잘린다)
+# ============================================================================
+WIN <- 12
+rollf <- function(x, fun) zoo::rollapply(x, WIN, fun, align = "center", fill = NA)
+
+roll_long <- clean %>%
+  pivot_longer(all_of(var_order), names_to = "variable", values_to = "value") %>%
+  mutate(variable = factor(variable, levels = var_order)) %>%
+  group_by(variable) %>%
+  arrange(date, .by_group = TRUE) %>%
+  mutate(`이동평균`     = rollf(value, mean),
+         `이동합계`     = rollf(value, sum),
+         `이동최대`     = rollf(value, max),
+         `이동최소`     = rollf(value, min),
+         `이동표준편차` = rollf(value, sd),
+         `이동중앙값`   = rollf(value, median)) %>%
+  ungroup()
+```
+
+## 원계열 + 이동평균 + 이동표준편차
+
+```{r rolling-plot, fig.height=8}
+# 한 패널에 3개 곡선: 원계열(회색), 이동평균(파랑), 이동표준편차(빨강).
+# 변수마다 스케일이 달라 free_y. 이동평균이 흐르면 추세, 이동표준편차가 변하면 이분산.
+roll_long %>%
+  pivot_longer(c(value, `이동평균`, `이동표준편차`),
+               names_to = "stat", values_to = "v") %>%
+  mutate(stat = recode(stat, value = "원계열"),
+         stat = factor(stat, levels = c("원계열","이동평균","이동표준편차"))) %>%
+  ggplot(aes(date, v, color = stat, linewidth = stat)) +
+  geom_line(na.rm = TRUE) +
+  facet_wrap(~variable, scales = "free_y", ncol = 2) +
+  scale_color_manual(values = c("원계열"="grey70","이동평균"="steelblue","이동표준편차"="firebrick")) +
+  scale_linewidth_manual(values = c("원계열"=0.4,"이동평균"=0.9,"이동표준편차"=0.9), guide = "none") +
+  labs(title = "Rolling Statistics (윈도우 12개월)",
+       subtitle = "이동평균이 흐르면 추세(비정상), 이동표준편차가 변하면 이분산(비정상)",
+       x = NULL, y = NULL, color = NULL) +
+  theme(legend.position = "top")   # 폰트는 theme_set(base_family=KFONT) 적용됨
+```
+
+> **읽는 법 (변수별)**
+> `tourists`: 2020~2021 코로나 급락 때문에 이동평균이 크게 꺼졌다가 회복 → **평균 비정상**이 뚜렷.
+> 오염물질들: 이동평균이 완만히 우하향(대기질 개선 추세)하면 추세성, 이동표준편차가
+> 시기별로 달라지면 이분산. 둘 중 하나라도 수평이 아니면 차분/변환이 필요하다는 신호다.
+
+## Rolling Statistics 값 (텍스트 출력)
+
+```{r rolling-values}
+# ============================================================================
+# 변수별 12개월 이동통계 요약.
+#   - 이동평균은 추세를 보려고 시작·끝·최소·최대까지 펼쳐서 평균이 얼마나 흘렀는지 본다.
+#   - 합계/표준편차/중앙값은 기간 평균(대표값)으로 한 칸씩 요약한다.
+# ============================================================================
+roll_summary <- roll_long %>%
+  group_by(variable) %>%
+  summarise(
+    원계열평균        = mean(value, na.rm = TRUE),
+    이동평균_시작     = first(na.omit(`이동평균`)),
+    이동평균_끝       = last(na.omit(`이동평균`)),
+    이동평균_최소     = min(`이동평균`, na.rm = TRUE),
+    이동평균_최대     = max(`이동평균`, na.rm = TRUE),
+    이동합계_평균     = mean(`이동합계`, na.rm = TRUE),
+    이동표준편차_평균 = mean(`이동표준편차`, na.rm = TRUE),
+    이동중앙값_평균   = mean(`이동중앙값`, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(across(where(is.numeric), ~round(., 4)))
+
+print(as.data.frame(roll_summary))    # 콘솔 텍스트 출력
+knitr::kable(roll_summary, caption = "변수별 Rolling Statistics 요약 (12개월 윈도우, 합계·중앙값 포함)")
+```
+
+```{r rolling-values-full}
+# 월별 전체 이동통계 값(6종). 앞·뒤 일부만 출력하고, 전체는 roll_long / 아래 변수에 저장.
+roll_show <- roll_long %>%
+  mutate(across(c(value, `이동평균`,`이동합계`,`이동최대`,`이동최소`,`이동표준편차`,`이동중앙값`),
+                ~round(., 3))) %>%
+  select(date, variable, value, `이동평균`,`이동합계`,`이동최대`,`이동최소`,`이동표준편차`,`이동중앙값`)
+
+# 변수 하나(tourists)만 펼쳐서 가운데 구간(값이 채워진 곳)을 예시로 출력
+cat("── tourists 이동통계 (2017년 일부) ──\n")
+print(roll_show %>% filter(variable == "tourists",
+                           date >= as.Date("2017-01-01"), date <= as.Date("2017-12-01")))
+
+# CSV로도 저장하고 싶으면 주석 해제:
+# write.csv(roll_show, file.path(data_dir, "rolling_statistics_all.csv"), row.names = FALSE)
+```
+
+## 차분 후 Rolling Statistics (정상화 확인)
+
+```{r rolling-diff-plot, fig.height=8}
+# 1차 차분 후 같은 그림. 차분으로 추세가 제거되면 이동평균이 0 근처에서 수평이 된다.
+diff_long <- clean %>%
+  mutate(across(all_of(var_order), ~c(NA, diff(.)))) %>%   # 1차 차분
+  pivot_longer(all_of(var_order), names_to = "variable", values_to = "value") %>%
+  mutate(variable = factor(variable, levels = var_order)) %>%
+  group_by(variable) %>% arrange(date, .by_group = TRUE) %>%
+  mutate(`이동평균`     = zoo::rollapply(value, WIN, mean, align="center", fill=NA),
+         `이동표준편차` = zoo::rollapply(value, WIN, sd,   align="center", fill=NA)) %>%
+  ungroup()
+
+diff_long %>%
+  pivot_longer(c(value, `이동평균`, `이동표준편차`), names_to = "stat", values_to = "v") %>%
+  mutate(stat = recode(stat, value = "원계열(차분)"),
+         stat = factor(stat, levels = c("원계열(차분)","이동평균","이동표준편차"))) %>%
+  ggplot(aes(date, v, color = stat, linewidth = stat)) +
+  geom_line(na.rm = TRUE) +
+  facet_wrap(~variable, scales = "free_y", ncol = 2) +
+  scale_color_manual(values = c("원계열(차분)"="grey70","이동평균"="steelblue","이동표준편차"="firebrick")) +
+  scale_linewidth_manual(values = c("원계열(차분)"=0.4,"이동평균"=0.9,"이동표준편차"=0.9), guide="none") +
+  labs(title = "1차 차분 후 Rolling Statistics",
+       subtitle = "이동평균이 0 근처에서 수평이면 추세 제거 성공",
+       x = NULL, y = NULL, color = NULL) +
+  theme(legend.position = "top")   # 폰트는 theme_set(base_family=KFONT) 적용됨
+```
+
+# ADF 검정 (Rolling Statistics의 수치 companion)
+
+```{r adf-table}
+# Rolling statistics는 '시각' 진단이라, 수치 근거로 ADF 검정을 함께 본다.
+#  - H0 = 비정상(단위근). p < 0.05 면 정상.
+#  - 원계열 / 1차차분 / 계절차분(12) 세 가지로 비교해 차분 필요 여부를 판단.
+adf_one <- function(x, name) {
+  safe <- function(s) tryCatch(suppressWarnings(adf.test(s)$p.value), error = function(e) NA)
+  tibble(변수 = name,
+         `p(원계열)`       = safe(x),
+         `p(1차차분)`      = safe(diff(x)),
+         `p(계절차분12)`   = safe(diff(x, lag = 12)))
+}
+adf_tbl <- purrr::map_dfr(var_order, ~adf_one(clean[[.x]], .x)) %>%
+  mutate(across(starts_with("p("), ~round(., 4)),
+         판정_원계열 = ifelse(`p(원계열)` < 0.05, "정상", "비정상"))
+print(as.data.frame(adf_tbl))         # 콘솔 텍스트 출력
+knitr::kable(adf_tbl, caption = "ADF p값 (p<0.05 = 정상). Rolling statistics 시각 판단과 교차확인")
+```
+
+> **종합 해석**
+> Rolling statistics(시각)와 ADF(수치)가 **같은 결론**을 가리키면 신뢰할 수 있다.
+> 예: 어떤 변수의 이동평균이 흐르고 ADF 원계열 p>0.05(비정상)인데, 1차차분 후 이동평균이
+> 수평이 되고 ADF p<0.05(정상)면 → 그 변수는 `d=1` 차분이 필요하다는 일관된 근거가 된다.
+> `tourists`는 코로나 충격으로 단순 차분만으로 정상화가 약할 수 있으니, 이때는 로그변환이나
+> 코로나 더미를 함께 고려한다.

@@ -1,0 +1,478 @@
+---
+title: "Final project"
+output: html_document
+date: "2026-06-21"
+---
+2020170849 정민규, 2022170823 최진규, 2021170871 김찬우
+
+### 국내 방한 외국인 관광객수와 관광수입 예측 모델 
+#### - 대기 오염을 중심으로
+## 1. Introduction 
+현재 관광업은 나날이 성장하며 각광을 받고 있다. 비단 경제 증진 효과 뿐만 아니라 이미지 재고, 고용 창출 등에도 효과적이기에 관광업을 안정적으로 유지함은 중요하다. 더욱이 최근에는 방한 외국인 관광객이 나날이 증가하며 그 중요성이 부각되고 있다. 실제로 2026년 4월 16일 대한민국 정책브리핑의 문화체육관광부 정책 뉴스에 따르면, 올해 1분기 외국인 관광객은 476만 명으로 역대 최대로 나타났다.^[https://www.korea.kr/news/policyNewsView.do?newsId=148962804] 
+ 
+그러나, 겨울철, 봄철에 심해지는 미세먼지는 주요 문제로 자리잡고 있으며 관광업에도 큰 영향을 끼칠 우려가 있다. 기존 선행연구^[김미경 (Olivia Hye Kim). (2021). 미세먼지·초미세먼지가 국내 관광수요에 미치는 영향분석: 국민여행조사자료를 중심으로. 관광연구저널, 35(5), 131–144.]는 미세먼지와 내국인 관광객의 방문자 수, 소비 금액을 중점적으로 연구하였다.실제로 국민을 대상으로 조사한 선행연구의 경우, 거주지의 미세먼지가 ‘나쁨’일 경우 당일 여행 수요가 3.9% 감소하였고 초미세먼지가 ‘나쁨’인 경우 숙박여행의 수요가 5.2%가 감소하였다.  그러나, 본 선행 연구는 횡단면 데이터를 분석하여 전반적인 시계열 흐름을 파악하지 못했으며, 최근 급증하고 있는 해외 관광객에 대해서도 분석하지 않았다. 또한, 본 선행 연구조차도 미세먼지가 관광업에 유의미한 타격을 줄 수 있음에도 불구하고 관련 연구가 2010년대 후반에 와서야 본격적으로 진행되어 분석이 더욱 필요하다고 언급한다. 
+  
+또한, 2019년의 JTBC '전보다 더 심해졌다... 외국인 관광객도 미세먼지 걱정', 연합뉴스의 '안개 아니에요?...들뜬 외국인 관광객들, 미세먼지 무방비' ^[https://news.jtbc.co.kr/article/NB11774639] 기사^[https://www.yna.co.kr/view/AKR20190306174400004]를 참고하여 외국인 관광객에게는 미세먼지에 대한 정보가 잘 알려지지 않았고, 최근에 와서야 인지하는 관광객이 늘어나고 있다고 판단하였다. 현재 시점에서 보다 장기적인 미세먼지와 관광업의 특성을 연구할 필요가 있고, 특히 증가하고 있는 해외관광객의 수와 소비 금액을 분석할 필요가 있다고 판단하여 주제로 선정하였다. 
+  이번 연구의 research question은 다음과 같다. 
+  
+  a. 대기 오염 변수(외생변수)를 고려할 경우, 국내 월별 방한 외국인 관광객수 예측에 도움이 된다. 
+  
+  b. 대기 오염 변수(외생변수)를 고려할 경우, 국내 월별 관광수입 예측에 도움이 된다. 
+  
+  이외에도 The Guardian의 2026년 4월 16일 기사에 따르면, 태국 치앙마이에서도 심각한 대기오염으로 관광업에 타격을 입는 것으로 보고 되고 있다.^[Rebecca Ratcliffe, The Guardian, 2026.04.16., https://www.theguardian.com/world/2026/apr/15/thailand-chiang-mai-tourism-air-pollution-war-price-spikes] 
+  
+## 2. Analysis 
+ 0. 선행 연구와의 차이점
+ 
+기존 선행연구^[김미경 (Olivia Hye Kim). (2021). 미세먼지·초미세먼지가 국내 관광수요에 미치는 영향분석: 국민여행조사자료를 중심으로. 관광연구저널, 35(5), 131–144.]는 미세먼지와 내국인 관광객의 방문자 수, 소비 금액을 중점적으로 연구하였다.실제로 국민을 대상으로 조사한 선행연구의 경우, 거주지의 미세먼지가 ‘나쁨’일 경우 당일 여행 수요가 3.9% 감소하였고 초미세먼지가 ‘나쁨’인 경우 숙박여행의 수요가 5.2%가 감소하였다.  그러나, 본 선행 연구는 횡단면 데이터를 분석하여 전반적인 시계열 흐름을 파악하지 못했으며, 최근 급증하고 있는 해외 관광객에 대해서도 분석하지 않았다. 또한, 본 선행 연구조차도 미세먼지가 관광업에 유의미한 타격을 줄 수 있음에도 불구하고 관련 연구가 2010년대 후반에 와서야 본격적으로 진행되어 분석이 더욱 필요하다고 언급한다.
+
+ 1. 변수 설명
+
+월별 방한 외래관광객 수: 한국관광데이터랩에 있는 관광빅데이터서비스팀의 관광통계/발간보고서의 '연도별 통계(1975년-2025년)' 자료를 사용하였다. 1975년부터 2025년까지의 자료이나 본 프로젝트에서는 2016년 1월부터 2025년 5월까지의 자료를 사용하였다. 2025년 관광수입, 관광지출, 관광수지는 잠정치이다.^[https://datalab.visitkorea.or.kr/site/portal/ex/bbs/View.do?cbIdx=1127&bcIdx=300119&pageIndex=1&tgtTypeCd=&searchKey=&searchKey2=&tabFlag=N&subFlag=N&cateCont=spt01] 
+ 
+월별 관광수입: 위와 동일한 출처의 데이터이다. 단위는 $1,000이다. 
+ 
+대기 오염 성분: 국가데이터처(KOSIS)의 월별 도시별 대기오염도 내부의 자료를 사용하였다. 2015년 1월부터 2025년 6월까지의 월별 데이터이다. 월별 미세먼지(PM10), 월별 초미세먼지(PM2.5), 월별 오존, 월별 일산화탄소, 월별 아황산가스이다. 오존의 경우는 광화학 옥시던트의 하나로 오염물질에 속하며 무색, 무미이다. 호흡기 질환자, 노약자, 어린이들에게 영향이 크므로 주의할 필요가 있다. 일산화탄소 또한 무색, 무취의 맹독성 기체로 교통체증이 심한 도심지역에서 많이 관측된다. 신경계통에 피해를 주며 운동신경, 근육마비 등에 악영향을 끼친다. 아황산가스는 가스상 대기오염물질로 불쾌한 자극적인 냄새가 나는 무색의 불연성 기체다. 각종 구조물의 부식, 생태계와 인간에 악영향을 미치는 특징이 있다.
+ 
+ 2. 기초 통계량(Rolling Statistics)
+ 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6, fig.align = "center")
+```
+
+```{r libraries}
+library(tidyverse)
+library(lubridate)
+library(readxl)     # xlsx 읽기
+library(zoo)
+library(tseries)    # adf.test (정상성 검정 companion)
+library(dplyr)
+library(corrplot)   # 상관 히트맵
+library(GGally)     # ggpairs
+library(scales)     # comma
+library(reshape2)   # melt
+```
+
+```{r prep-loaders}
+data_dir <- "/Users/chanu/Desktop/다변량분석플젝"                            
+p <- function(f) file.path(data_dir, f)
+
+parse_poll <- function(path) {
+  con <- file(path, open = "r", encoding = "CP949")
+  lines <- readLines(con, warn = FALSE); close(con)
+  txt <- paste(lines, collapse = "\n")
+  blocks <- strsplit(txt, "<Row\\b", perl = TRUE)[[1]][-1]
+  cell_texts <- function(b) {
+    m <- gregexpr("(?s)(?<=<Data[^>]{0,200}>).*?(?=</Data>)", b, perl = TRUE)
+    trimws(regmatches(b, m)[[1]])
+  }
+  hi  <- which(grepl("2016\\.01", blocks))[1]
+  hdr <- cell_texts(blocks[hi]); tot <- cell_texts(blocks[hi + 1])
+  is_m  <- grepl("^\\d{4}\\.\\d{2}", hdr)
+  dates <- as.Date(paste0(sub("\\.", "-", sub("\\s.*", "", hdr[is_m])), "-01"))
+  vals  <- suppressWarnings(as.numeric(gsub("[^0-9.]", "", tot[is_m])))
+  n <- min(length(dates), length(vals))
+  tibble(date = dates[seq_len(n)], value = vals[seq_len(n)]) %>%
+    filter(!is.na(value)) %>% arrange(date)
+}
+
+reshape_monthly <- function(path, sheet, month_cols) {
+  df <- readxl::read_excel(path, sheet = sheet, col_names = FALSE)
+  out <- list()
+  for (i in seq_len(nrow(df))) {
+    yr <- suppressWarnings(as.integer(df[[1]][i]))
+    if (is.na(yr) || yr < 1975 || yr > 2025) next
+    for (k in seq_along(month_cols)) {
+      val <- suppressWarnings(as.numeric(df[[month_cols[k]]][i]))
+      out[[length(out)+1]] <- tibble(date = as.Date(sprintf("%d-%02d-01", yr, k)), value = val)
+    }
+  }
+  bind_rows(out) %>% arrange(date)
+}
+
+PM2.5 <- parse_poll(p("초미세먼지.xls"))     %>% rename(PM2.5 = value)
+PM10 <- parse_poll(p("월별_미세먼지.xls"))  %>% rename(PM10 = value)
+CO   <- parse_poll(p("일산화탄소.xls"))     %>% rename(CO   = value)
+O3   <- parse_poll(p("오존.xls"))           %>% rename(O3   = value)
+SO2  <- parse_poll(p("아황산가스.xls"))     %>% rename(SO2  = value)
+tour_arrivals <- reshape_monthly(p("연도별통계(1975-2025).xlsx"),
+                        "방한 외래관광객", 4:15) %>%
+        rename(Tourists = value) %>% filter(!is.na(Tourists))
+tour_receipts <- reshape_monthly(p("연도별통계(1975-2025).xlsx"),
+                                 "관광수입", 5:16) %>%
+        rename(Receipts = value) %>% filter(!is.na(Receipts))
+
+raw <- tour_arrivals %>% inner_join(tour_receipts, "date") %>%
+  inner_join(PM2.5, "date") %>% inner_join(PM10, "date") %>%
+  inner_join(CO,   "date") %>% inner_join(O3,   "date") %>%
+  inner_join(SO2,  "date") %>% arrange(date)
+
+var_order <- c("Tourists", "Receipts", "PM2.5", "PM10", "CO", "O3", "SO2")
+
+# df_num: 숫자형 분석 변수만 추출 (date, cluster 제외)
+df_num <- raw %>% select(all_of(var_order))
+```
+
+# 데이터 분포
+
+## 히스토그램 (밀도곡선 포함)
+
+```{r histograms, fig.height=7}
+df_num %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "value") %>%
+  ggplot(aes(x = value)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 20, fill = "#5b9bd5", color = "white", alpha = 0.8) +
+  geom_density(color = "#c00000", linewidth = 0.9) +
+  facet_wrap(~variable, scales = "free", ncol = 2) +
+  labs(title = "Histogram with Density Curve by Variable", x = NULL, y = "Density")
+```
+
+## 박스플롯 (이상치 점검)
+
+스케일이 다르므로 각 변수를 표준화(z-score)해 한 그림에서 비교한다.
+
+```{r boxplots, fig.height=5}
+df_num %>%
+  mutate(across(everything(), ~as.numeric(scale(.)))) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "z") %>%
+  ggplot(aes(x = variable, y = z, fill = variable)) +
+  geom_boxplot(alpha = 0.7, outlier.color = "#c00000") +
+  labs(title = "Standardized (z-score) Boxplot", x = NULL, y = "z-score") +
+  theme(legend.position = "none")
+```
+
+## 정규성 점검 (Q-Q plot)
+
+```{r qqplots, fig.height=7}
+df_num %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "value") %>%
+  ggplot(aes(sample = value)) +
+  stat_qq(color = "#5b9bd5", size = 1) +
+  stat_qq_line(color = "#c00000") +
+  facet_wrap(~variable, scales = "free", ncol = 2) +
+  labs(title = "Normal Q-Q Plot", x = "Theoretical Quantiles", y = "Sample Quantiles")
+```
+
+> **해석 — 분포·이상치.** 오염변수들은 대체로 단봉이면서 오른쪽으로 약간 긴 꼬리를 보이고, 관광객 수는 넓게 퍼진(이봉에 가까운) 분포를 보인다. Q-Q plot에서 오염변수는 중앙부가 직선에 가깝지만 양 끝에서 벗어나 완전한 정규성은 아니며, 관광객 수는 정규선에서 뚜렷이 이탈한다. 박스플롯에서 관광객 수의 저점(코로나 구간)이 이상치로 잡힐 수 있으나, 이는 측정 오류가 아니라 실제 사건이므로 제거보다는 해석에 반영하는 편이 적절하다. 후속 모형에서 오염변수는 필요 시 **로그변환**, 관광객 수는 **코로나 더미 또는 구간 분리**를 고려할 수 있다.
+
+**2-a. 결측치 확인**
+```{r missing-check}
+# number and percentage of missing values per variable
+missing_summary <- raw %>%
+  summarise(across(all_of(var_order), ~sum(is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "n_missing") %>%
+  mutate(missing_pct = round(100 * n_missing / nrow(raw), 2))
+
+print(as.data.frame(missing_summary))
+
+cat(sprintf("\nTotal observations: %d rows (%s ~ %s)\n",
+            nrow(raw), min(raw$date), max(raw$date)))
+cat(sprintf("Total missing values: %d\n", sum(missing_summary$n_missing)))
+```
+2015년 1월부터 2025년 6월까지의 월별 데이터이며 총 114개의 행을 가지는 것으로 확인하였다. 또한, 결측치는 없는 것으로 확인하였다. 따라서, 별도의 결측치 처리 기법(선형보간, Forward-fill 등)은 이번 프로젝트에서는 사용하지 않는다.
+```{r rolling-compute}
+# ============================================================================
+# For each variable, compute 6 rolling statistics using a 12-month window.
+#   - Rolling Mean   : overall trend (e.g., moving average of stock price)
+#   - Rolling Sum    : cumulative total over the period (e.g., 12-month sum)
+#   - Rolling Max/Min: range of variation / outlier detection within the window
+#   - Rolling SD     : volatility (degree of variance) within the window
+#   - Rolling Median : central tendency robust to extreme values
+# ============================================================================
+WIN <- 12
+rollf <- function(x, fun) zoo::rollapply(x, WIN, fun, align = "center", fill = NA)
+
+roll_long <- raw %>%
+  pivot_longer(all_of(var_order), names_to = "variable", values_to = "value") %>%
+  mutate(variable = factor(variable, levels = var_order)) %>%
+  group_by(variable) %>%
+  arrange(date, .by_group = TRUE) %>%
+  mutate(rolling_mean   = rollf(value, mean),
+         rolling_sum    = rollf(value, sum),
+         rolling_max    = rollf(value, max),
+         rolling_min    = rollf(value, min),
+         rolling_sd     = rollf(value, sd),
+         rolling_median = rollf(value, median)) %>%
+  ungroup()
+```
+**2-b. Visualization of Rolling Statistics**
+```{r rolling-plot, fig.height=8}
+# 3 lines per panel: raw series (grey), rolling mean (blue), rolling SD (red)
+
+roll_long %>%
+  pivot_longer(c(value, rolling_mean, rolling_sd),
+               names_to = "stat", values_to = "v") %>%
+  mutate(stat = recode(stat,
+                       value          = "Raw Series",
+                       rolling_mean   = "Rolling Mean",
+                       rolling_sd     = "Rolling SD"),
+         stat = factor(stat, levels = c("Raw Series", "Rolling Mean", "Rolling SD"))) %>%
+  ggplot(aes(date, v, color = stat, linewidth = stat)) +
+  geom_line(na.rm = TRUE) +
+  facet_wrap(~variable, scales = "free_y", ncol = 2) +
+  scale_color_manual(values = c("Raw Series" = "grey70",
+                                "Rolling Mean" = "steelblue",
+                                "Rolling SD" = "firebrick")) +
+  scale_linewidth_manual(values = c("Raw Series" = 0.4,
+                                    "Rolling Mean" = 0.9,
+                                    "Rolling SD" = 0.9), guide = "none") +
+  labs(title = "Rolling Statistics",
+       subtitle = "window = 12 months",
+       x = NULL, y = NULL, color = NULL) +
+  theme(legend.position = "top")
+```
+**2-c. Rolling Statistics (Summary)**
+```{r rolling-values}
+roll_summary <- roll_long %>%
+  group_by(variable) %>%
+  summarise(
+    raw_mean          = mean(value, na.rm = TRUE),
+    rolling_mean_start = first(na.omit(rolling_mean)),
+    rolling_mean_end   = last(na.omit(rolling_mean)),
+    rolling_mean_min   = min(rolling_mean, na.rm = TRUE),
+    rolling_mean_max   = max(rolling_mean, na.rm = TRUE),
+    rolling_sum_mean   = mean(rolling_sum, na.rm = TRUE),
+    rolling_sd_mean    = mean(rolling_sd, na.rm = TRUE),
+    rolling_median_mean = mean(rolling_median, na.rm = TRUE),
+    .groups = "drop"
+  ) %>%
+  mutate(across(where(is.numeric), ~round(., 4)))
+
+print(as.data.frame(roll_summary))
+```
+Windows를 12개월로 설정하여 변수의 이동평균과 이동표준편차를 산출했다. 월별 자료에서 12개월을 window로 설정하였으며 대략적인 시계열의 기초통계량을 파악하였다. 종속변수인 관광객 수(tourists)는 6개 변수 중 변동이 압도적으로 컸다. 이동평균이 약 143만 명에서 시작해 코로나19 시기(2020~2021년)에 최저 56,357명까지 급락한 뒤 2024년에 다시 약 146만 명 수준으로 회복하여, 이동평균의 범위가 5.6만~147만 명으로 편차가 심하다는 사실을을 확인하였다. 이동표준편차 또한 약 18.8만으로 높아 분산 역시 안정적이지 않았다. 또 다른 종속변수인 관광수입(receipts) 또한 약 13억 9615만 달러에서 시작하여 코로나19시기 (2020~2021년)에 급락한 후 다시 완만하게 회복하는 모양을 보였다. 이동평균 값의 범위가 7억 7851만 달러~17억 6572만 달러로 넓었으며 이동표준편차 또한 2억 2677만 달러로 적지 않아 변동이 컸음을 확인할 수 있다. 
+ 
+대기오염 변수 중에서는 아황산가스(SO2)의 이동평균이 0.0046에서 0.0026으로 꾸준히 하락해 뚜렷한 감소세를 보였다. 초미세먼지(PM2.5), 미세먼지(PM10), 일산화탄소(CO)는 세 변수 모두 이동평균이 분석 기간에 걸쳐 완만히 우하향하여 세 항목에 대해서는 대기질이 점진적으로 개선되는 흐름을 보였다. (예: PM2.5 이동평균 26.08→15.92, PM10 46.75→28.92, CO 0.49→0.38). 이들 변수는 이동표준편차의 평균이 각각 5.79, 10.99, 0.076 수준으로 분산은 상대적으로 작았다. 반면 오존(O3)은 이동평균이 0.0272에서 0.0336으로 소폭 상승하는 약한 증가 추세만 보여 6개 변수 중 가장 안정적이었다.
+ 
+ 3. 상관관계 
+ ## 상관계수 행렬
+
+결측치는 쌍별 제거(`use = "pairwise.complete.obs"`)로 처리한다.
+
+```{r cor-matrix}
+cor_mat <- cor(df_num, use = "pairwise.complete.obs", method = "pearson")
+round(cor_mat, 3)
+```
+
+## 상관 히트맵 (corrplot)
+
+```{r corrplot, fig.height=7}
+corrplot(cor_mat,
+         method = "color",
+         type = "upper",
+         addCoef.col = "black",
+         tl.col = "black", tl.srt = 45,
+         col = colorRampPalette(c("#2166ac", "white", "#b2182b"))(200),
+         diag = FALSE,
+         number.cex = 0.9,
+         title = "Correlation Heatmap (Pearson)",
+         mar = c(0, 0, 2, 0))
+```
+
+## 상관 히트맵 (ggplot 버전)
+
+```{r cor-ggplot, fig.height=6}
+cor_mat %>%
+  reshape2::melt() %>%
+  ggplot(aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), size = 3.5) +
+  scale_fill_gradient2(low = "#2166ac", mid = "white", high = "#b2182b",
+                       midpoint = 0, limits = c(-1, 1), name = "r") +
+  labs(title = "Correlation Heatmap", x = NULL, y = NULL) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+> **해석 — 상관관계 (핵심)**
+>
+> - **오염변수끼리 강하게 묶여 있다(다중공선성).** pm25↔pm10 = **0.88**, pm25↔co = **0.80**, pm25↔so2 = 0.71, co↔so2 = 0.65, pm10↔co = 0.62, pm10↔so2 = 0.62 로 0.6~0.9의 높은 양의 상관을 보인다. 겨울철 난방·배출 증가, 대기 정체 등 **공통 계절 요인**에 함께 움직이기 때문이다. 다변량 회귀에 이들을 동시에 넣으면 다중공선성 문제가 생기므로, **VIF 점검 후 변수 축소** 또는 **PCA/요인분석으로 종합 오염지표** 구성을 권한다.
+> - **오존(o3)은 반대로 움직인다.** o3↔co = **-0.61**, o3↔pm25 = -0.26 으로 음의 상관이다. 오존은 광화학 반응·여름 일사량에 의존해 다른 1차 오염물질과 계절 패턴이 반대라서다. 따라서 o3는 별개의 정보를 담고 있어 독립 변수로 유지할 가치가 있다.
+> - **관광객 수와 오염변수의 관계는 약하다.** so2 = 0.33 (가장 높음), pm25 = 0.18, pm10 = 0.14, co = 0.12, o3 = -0.03(사실상 무상관)이다. 즉 개별 오염변수만으로 관광객 수를 설명하기 어렵다. so2의 약한 양의 상관도 인과라기보다 **따뜻한 계절에 관광객과 so2가 함께 변동하는 공통 계절성**의 영향으로 보는 것이 타당하다.
+
+# 산점도
+
+## 산점도 행렬 (ggpairs)
+
+대각선은 분포(밀도), 하단은 산점도+추세선, 상단은 상관계수를 표시한다.
+
+```{r ggpairs, fig.height=9, fig.width=10}
+ggpairs(df_num,
+        lower = list(continuous = wrap("smooth", alpha = 0.5, size = 0.8,
+                                       color = "#5b9bd5")),
+        diag  = list(continuous = wrap("densityDiag", fill = "#5b9bd5", alpha = 0.5)),
+        upper = list(continuous = wrap("cor", size = 4))) +
+  labs(title = "Scatterplot Matrix") +
+  theme(strip.text = element_text(size = 9))
+```
+
+## 종속변수(tourists) 대 각 오염변수 산점도
+
+관심 대상인 `tourists` 와 오염변수 5개의 관계를 개별 산점도 + 선형 회귀선으로 본다.
+
+```{r scatter-target, fig.height=7}
+df_num %>%
+  pivot_longer(-Tourists, names_to = "pollutant", values_to = "value") %>%
+  ggplot(aes(x = value, y = Tourists)) +
+  geom_point(alpha = 0.6, color = "#5b9bd5") +
+  geom_smooth(method = "lm", se = TRUE, color = "#c00000") +
+  facet_wrap(~pollutant, scales = "free_x", ncol = 2) +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Tourists vs Air Pollutants",
+       x = "Pollutant Value", y = "Tourists")
+```
+
+> **해석 — 산점도.** 산점도 행렬에서 오염변수들끼리는 점들이 우상향 직선에 가깝게 모여 강한 양의 관계를 재확인할 수 있다. 반면 관광객 수 대 오염변수 산점도는 회귀선 기울기가 완만하고(so2만 약간 가파름) 점들의 산포가 커서, **단일 오염변수로는 관광객 수 변동을 설명하기 어렵다**는 상관 분석 결과와 일치한다.
+
+## 종속변수(Receipts) 대 각 오염변수 산점도
+
+관심 대상인 `Receipts`(관광수입)와 오염변수 5개의 관계를 개별 산점도 + 선형 회귀선으로 본다.
+
+```{r scatter-receipts, fig.height=7}
+pollutant_vars <- c("PM2.5", "PM10", "CO", "O3", "SO2")
+
+df_num %>%
+  select(Receipts, all_of(pollutant_vars)) %>%
+  pivot_longer(-Receipts, names_to = "pollutant", values_to = "value") %>%
+  ggplot(aes(x = value, y = Receipts)) +
+  geom_point(alpha = 0.6, color = "#70ad47") +
+  geom_smooth(method = "lm", se = TRUE, color = "#c00000") +
+  facet_wrap(~pollutant, scales = "free_x", ncol = 2) +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Receipts (관광수입) vs Air Pollutants",
+       x = "Pollutant Value", y = "Receipts ($1,000)")
+```
+
+### Receipts 대 오염변수 상관계수
+
+```{r cor-receipts}
+cor_receipts <- cor(
+  df_num %>% select(Receipts, all_of(pollutant_vars)),
+  use = "pairwise.complete.obs", method = "pearson"
+)["Receipts", pollutant_vars]
+
+data.frame(
+  pollutant = names(cor_receipts),
+  pearson_r = round(as.numeric(cor_receipts), 3)
+) %>%
+  arrange(desc(abs(pearson_r)))
+```
+
+> **해석 — Receipts 산점도 및 상관관계.**
+>
+> 관광수입(Receipts)과 오염변수 5개의 피어슨 상관계수는 SO2 = **0.042**, CO = **–0.040**, O3 = **0.023**, PM2.5 = **0.010**, PM10 = **–0.002**로 모두 **사실상 0에 수렴**하며, 통계적으로 유의미한 선형 관계가 없다고 볼 수 있다. 관광객 수(Tourists)에서 SO2가 0.33의 약한 양의 상관을 보였던 것과 대조적으로, 관광수입은 모든 오염변수와 극히 낮은 상관을 보인다.
+>
+> CO와 PM10이 음의 방향으로 나타나는 것은 겨울철 대기오염 심화 시기에 관광수입이 상대적으로 감소하는 계절 패턴을 반영하는 것으로 해석할 수 있으나, 상관계수 절댓값이 0.05 미만으로 실질적인 의미를 부여하기 어렵다. 이처럼 Receipts와 오염변수 간 상관이 극히 낮은 이유는 관광수입이 관광객 수뿐 아니라 **1인당 소비 금액**에도 의존하기 때문이다. 소비 패턴은 환율, 관광 트렌드, 방문 목적 등 대기오염과 무관한 요인에 의해 결정되며, 코로나19 구간(2020~2022년)의 급격한 수입 감소가 오염변수의 설명력을 추가적으로 희석시켰다.
+>
+> 따라서 **단일 오염변수만으로 관광수입 변동을 설명하는 것은 어렵다**. 후속 시계열 모형(SARIMAX)에서 오염변수를 외생변수로 포함하더라도 관광수입 예측에 대한 기여는 제한적일 가능성이 높으며, 계절성과 코로나 더미를 함께 고려하는 것이 보다 적절하다.
+
+ 4. 정상성 분석
+ 
+ 5. Plot ACF, PACF
+ 
+ 6. 시계열 모델링
+ 
+ 7. Residual Diagnostics(plot and ljung-box test)
+ 
+ 8. 군집화
+```{r clustering}
+library(cluster)
+library(factoextra)
+
+# Standardization
+cluster_vars <- c("Tourists", "Receipts", "PM2.5", "PM10", "CO", "O3", "SO2")
+X <- scale(raw[, cluster_vars])
+rownames(X) <- format(raw$date, "%Y-%m")
+```
+clustering 진행 전에 변수의 range 차이가 심하므로 scaling을 하였다.
+scale() 함수를 이용하여 평균 0, 표준편차가 1인 표준정규분포로 변수를 정규화하였다. 
+
+**8-a. 군집 수(k) 결정 (Internal Measures: SSE - Elbow point)**
+```{r clustering-k}
+set.seed(42)
+fviz_nbclust(X, kmeans, method = "wss")        + ggtitle("Optimal number of clusters")
+```
+Clustering 기법 중 K-means 기법을 사용하였다. K-means는 널리 쓰이는 clustering 알고리즘 중 하나로 Partitional Clustering에 해당한다. 각 data는 사전에 정해진 군집의 개수(k)에 따라 가장 가까운 centroid에 할당된다. 알고리즘이 간단하고 다양한 형태의 데이터에 적용이 가능하여 널리 사용된다. 
+
+K-means는 미리 군집의 개수, k를 정해야 하는데 이번 프로젝트에서는 Internal Measures 중 하나로써 SSE를 사용하였다. SSE는 군집의 centroid와 데이터 간의 거리의 제곱의 합인데 k에 따라 SSE를 시각화하여 elbow point를 군집으로 선정한다. 본 프로젝트에서는 k=3으로 선정하였다. 
+
+**8-b. K-means 군집화**
+```{r clustering-kmeans}
+K <- 3
+set.seed(42)
+km <- kmeans(X, centers = K, nstart = 25)
+raw$cluster <- factor(km$cluster)
+
+cat(sprintf("Cluster sizes: %s\n", paste(table(km$cluster), collapse = ", ")))
+
+# Standardized means (z-score): positive = above average, negative = below average
+z_profile <- aggregate(X, by = list(cluster = km$cluster), FUN = mean)
+print(round(z_profile, 2), row.names = FALSE)
+
+# Raw-unit means
+raw_profile <- aggregate(raw[, cluster_vars], by = list(cluster = km$cluster), FUN = mean)
+print(round(raw_profile, 4), row.names = FALSE)
+
+# Automatic interpretation
+for (k in seq_len(K)) {
+  zrow <- as.numeric(z_profile[z_profile$cluster == k, cluster_vars])
+  names(zrow) <- cluster_vars
+  high <- names(sort(zrow[zrow >  0.5], decreasing = TRUE))
+  low  <- names(sort(zrow[zrow < -0.5]))
+  cat(sprintf("Cluster %d (%d months): High[%s] / Low[%s]\n",
+              k, sum(km$cluster == k),
+              paste(high, collapse = ","), paste(low, collapse = ",")))
+}
+```
+Cluster1: 총 29개의 달이 해당하며 SO2, PM2.5, CO, PM10이 모두 높고 방한 외국인 관광객 수도 많은 그룹이다. 상대적으로 Receipts가 저조하며 O3도 낮다. 대기 오염 농도가 높은 군집인 것으로 보아 겨울~봄철 대기오염 그룹으로 추정하였다. '겨울-봄형' 그룹으로 분류하였으며 난방 연료 사용 증가, 대기 정체, 편서풍의 영향에 의한 대기오염 농도 증가 시기로 분류하였다. 
+
+Cluster2: 총 49개의 달이 해당하며 높은 Receipts, Tourists와 낮은 PM2.5를 보이는 그룹이다. 상대적으로 O3는 가장 높은 그룹이다. 따라서, '여름-초가을형' 그룹으로 분류하였으며 대기 오염이 가장 덜하고 방한 외국인 관광객 수와 관광 수입이 높은 시기이다. 
+
+Cluster3: 총 36개의 달이 해당하며 낮은 Tourists, Receipts, SO2를 보인다. 이 그룹은 이번 프로젝트에서 사용한 데이터의 특성 상 COVID-19 시기에 해당하는 그룹으로 판단하였다. 
+
+**8-c. 시각화**
+```{r clustering-viz, fig.height=6}
+fviz_cluster(km, data = X, geom = "point", ellipse.type = "convex",
+             palette = "Set2", ggtheme = theme_minimal()) +
+  ggtitle(sprintf("K-means Clustering (k=%d)", K))
+
+ggplot(raw, aes(x = factor(month(date)), fill = cluster)) +
+  geom_bar() +
+  labs(x = "Month", y = "Count", title = "Monthly Cluster Distribution") +
+  scale_fill_brewer(palette = "Set2") + theme_minimal()
+
+ggplot(raw %>% filter(cluster == 3), aes(x = date, y = 1, fill = cluster)) +
+  geom_tile(height = 0.8, fill = "#E78AC3") +
+  scale_x_date(date_breaks = "6 months", date_labels = "%Y-%m") +
+  labs(x = NULL, y = NULL, title = "Group 3 Timeline") +
+  theme_minimal() +
+  theme(axis.text.y = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1))
+```
+시각화 결과는 다음과 같다. 
+
+Monthly Cluster Distribution: 각 군집이 1월~12월 중 어느 달에 몇 번씩 나타났는지를 시각화하였다. Group3의 경우, 1년 내내 일정한 수치인 것을 보니 위에서 분석하였듯이 COVID-19 시기를 따로 그룹으로 분류하였다고 판단하였다. 위에서 언급하였듯이, 4월~10월 경의 여름~초가을 시기가 Group2에 해당하는 모습을 관찰할 수 있다. 이와 대조적으로, 11월~3월 경의 겨울~봄 시기에는 Group1의 비중이 늘어나는 모습을 관찰할 수 있다. 
+
+Group3 Timeline: 전체 시기에서 Group3가 어느 군집에 속하는지를 추가로 분석하였다. 거의 대부분 COVID-19이 확산하여 방한 외국인 관광객 수와 관광 수입이 대폭 감소하고 산업 생산이 축소되었던 2020년~2023년 경에 분포되어 있음을 확인할 수 있다. 따라서, Group3는 이번 프로젝트에서는 주요하게 다루지는 않도록 한다. 
+
+**개선안**
+'여름-초가을'형에 비해 '겨울-봄형'이 O3를 제외한 대기오염 물질 농도가 높고 방한 외국인 관광객수에 비해 Receipts는 낮은 시기이므로 관광 수입을 증진할 필요성이 있는 그룹이라고 판단하였다. 따라서, 
+따라서, 본 프로젝트에서는 몇 가지 persona를 설정하여 해당 persona에 맞춘 관광 개선안을 제시한다.
+
+Persona1: 민감 호흡기 영유아 동반 가족 관광객
+취약점: 서울특별시 대기환경정보에 따르면, 고농도 SO2에 의한 천식, 폐렴과 PM2.5, PM10에 따른 호흡기질환이 가장 우려되는 그룹이다.
+대응책: 영유아가 선호하는 체험 위주 실내 공간에 가족 동반 할인을 적용하거나 '오늘의 추천 일정' 앱 알림 서비스를 제공하여 박물관, 과학관, 실내 전시, 실내 놀이시설로 유도하여 대응한다. 
+
+Persona2: 노년 부부 관광객
+취약점: 서울특별시 대기환경정보에 따르면, 고농도 PM2.5, PM10에 따른 심장질환과 호흡기질환으로 조기 사망률이 높아지는 위험 그룹이다. 또한, 고농도 CO2는 뇌손상과 운동신경, 사고능력 저하 등에 영향을 미친다.
+대응책: 도보 이동을 줄이고 대중교통 이동을 이용하도록 유도하는 방안이 있다. 또한, 심장질환에 무리가 가는 그룹이므로 야외 활동을 원할 경우에도, 저강도 코스의 트래킹 코스를 선택하도록 유도한다.
+
+Persona3: 아웃도어 액티비티 관광객
+취약점: CO에 따른 근육마비, 운동 신경 저하가 우려되며 PM2.5, PM10에 의한 신진대사 저하, SO2에 의한 폐렴, 기관지염, 천식 등에 직접적으로 영향을 받는 그룹이다.
+대응책: 실내 클라이밍, 실내 사격 등 실내 액티비티 활동으로 유도한다. 앱 서비스를 제공하여 일정 시간 이상은 실외 활동을 자제하도록 다국어로 제공하는 방법도 유용하다.
+
+## 3. Conclusions
+
+
+## 4. References

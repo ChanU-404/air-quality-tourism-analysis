@@ -1,0 +1,287 @@
+---
+title: "Exploratory Data Analysis (EDA)"
+subtitle: "Summary Statistics · Missing Values · Distribution · Histogram · Correlation · Scatterplot"
+author: "Chanu"
+date: "`r format(Sys.Date(), '%Y-%m-%d')`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+    code_folding: show
+    theme: flatly
+    df_print: paged
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r korean-font, include=FALSE}
+library(ggplot2)
+library(showtext)
+font_add_google("Nanum Gothic", "nanum")
+showtext_auto()
+
+theme_set(theme_minimal(base_family = "nanum", base_size = 12))
+options(scipen = 100)
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE,
+                      fig.width = 10, fig.height = 6, fig.align = "center")
+```
+
+# 개요
+
+이 문서는 월별 **관광객 수(`tourists`)** 와 5개 **대기오염 변수(`pm25, pm10, co, o3, so2`)** 에 대한
+탐색적 데이터 분석(EDA)을 수행한다. 각 분석 청크 아래에 **결과 해석**을 함께 적어,
+코드를 돌리면 표·그림과 해석을 한 번에 볼 수 있도록 구성했다.
+
+1. **기초 통계량** — 평균/중앙값/표준편차/사분위수/왜도/첨도
+2. **결측치(missing values)** 현황과 패턴
+3. **데이터 분포** — 히스토그램 + 밀도곡선, 박스플롯, Q-Q plot
+4. **상관관계** — 상관계수 행렬(히트맵)
+5. **산점도** — 변수 쌍별 산점도 행렬 + 회귀선
+
+```{r libraries}
+library(tidyverse)
+library(lubridate)
+library(GGally)      # ggpairs (scatterplot matrix)
+library(corrplot)    # correlation heatmap
+library(psych)       # describe (summary stats + skew/kurtosis)
+library(reshape2)    # melt
+library(scales)
+```
+
+# 데이터 불러오기
+
+```{r load-data}
+# CSV 경로 (Rmd와 같은 폴더에 있다고 가정)
+df <- read_csv("air_tourism_monthly.csv")
+
+# date 파싱: "2016-01" 형태 → 날짜
+df <- df %>%
+  mutate(date = ymd(paste0(date, "-01"))) %>%
+  arrange(date)
+
+glimpse(df)
+```
+
+```{r numeric-vars}
+# 분석 대상 수치형 변수
+num_vars <- c("tourists", "pm25", "pm10", "co", "o3", "so2")
+df_num <- df %>% select(all_of(num_vars))
+
+head(df_num)
+```
+
+> **해석.** 분석 기간은 **2016-01 ~ 2025-06**, 총 **114개월**의 월별 시계열이다. 종속변수는 관광객 수(`tourists`), 독립변수는 대기오염 5종(`pm25, pm10, co, o3, so2`)이다.
+
+# 기초 통계량
+
+`psych::describe()` 로 평균, 표준편차, 중앙값, 최소/최대, 범위, 왜도(skew), 첨도(kurtosis)를 한 번에 본다.
+
+```{r describe}
+stat_tbl <- psych::describe(df_num)
+stat_tbl
+```
+
+```{r summary-base}
+# base R summary (사분위수 확인용)
+summary(df_num)
+```
+
+> **해석 — 기초 통계량**
+>
+> | 변수 | 평균 | 중앙값 | 표준편차 | 왜도 | 첨도 |
+> |---|---|---|---|---|---|
+> | tourists | 932,795 | 1,104,155 | 571,679 | **-0.50** | **-1.30** |
+> | pm25 | 20.65 | 20.0 | 6.64 | 0.37 | -0.41 |
+> | pm10 | 37.83 | 37.0 | 12.25 | 0.45 | -0.51 |
+> | co | 0.432 | 0.40 | 0.088 | 0.64 | -0.40 |
+> | o3 | 0.031 | 0.031 | 0.009 | 0.26 | -0.82 |
+> | so2 | 0.0033 | 0.0030 | 0.0009 | 0.68 | -0.63 |
+>
+> - **관광객 수(tourists)** 가 가장 특이하다. 평균(932,795)이 중앙값(1,104,155)보다 **낮고 왜도가 음수(-0.50)** 다. 평소 100만 명대를 유지하다 일부 달에 급감한 것이 평균을 끌어내린 것으로, 실제 최솟값은 **29,415명**(코로나19 급감 구간으로 추정)까지 떨어진다. 첨도가 -1.30으로 크게 음수여서 "정상기 고수준 / 위기기 저수준"으로 갈라지는 분포(사실상 이봉형)에 가깝다. 변동계수(CV=0.61)도 가장 커서 변동성이 압도적이다.
+> - **오염변수 5종**은 모두 왜도가 양수(0.26~0.68)로 오른쪽 꼬리가 약간 길지만 심한 비대칭은 아니다(so2·co가 상대적으로 더 치우침). 첨도는 전부 음수로 정규분포보다 평평하며, 이는 계절에 따라 값이 넓게 퍼지는 시계열 특성과 일치한다.
+
+# 결측치 분석
+
+## 변수별 결측치 개수
+
+```{r missing-count}
+miss_tbl <- df %>%
+  summarise(across(everything(), ~sum(is.na(.)))) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "n_missing") %>%
+  mutate(pct_missing = round(100 * n_missing / nrow(df), 2)) %>%
+  arrange(desc(n_missing))
+
+miss_tbl
+```
+
+## 결측치 시각화
+
+```{r missing-plot, fig.height=4}
+ggplot(miss_tbl, aes(x = reorder(variable, n_missing), y = n_missing)) +
+  geom_col(fill = "#d9534f") +
+  geom_text(aes(label = ifelse(n_missing > 0,
+                               paste0(n_missing, " (", pct_missing, "%)"), "")),
+            hjust = -0.1, size = 3.5) +
+  coord_flip() +
+  labs(title = "Number of Missing Values by Variable", x = NULL, y = "Missing Count") +
+  expand_limits(y = max(miss_tbl$n_missing) * 1.2 + 1)
+```
+
+## 결측치 위치 맵
+
+행(시간)·열(변수) 격자에서 결측 위치를 한눈에 본다.
+
+```{r missing-map, fig.height=6}
+df %>%
+  mutate(row_id = row_number()) %>%
+  select(row_id, all_of(num_vars)) %>%
+  pivot_longer(-row_id, names_to = "variable", values_to = "value") %>%
+  mutate(is_missing = is.na(value)) %>%
+  ggplot(aes(x = variable, y = row_id, fill = is_missing)) +
+  geom_tile(color = "white", linewidth = 0.1) +
+  scale_fill_manual(values = c(`FALSE` = "#5cb85c", `TRUE` = "#d9534f"),
+                    labels = c("Observed", "Missing")) +
+  scale_y_reverse() +
+  labs(title = "Missing Value Location Map", x = NULL, y = "Row (time order)", fill = NULL)
+```
+
+> **해석 — 결측치.** 전체 114개월 자료에서 결측치는 **6개 변수 모두 0개**다. 위치 맵도 전 구간이 "Observed"로 채워져 있어, 보간이나 행 삭제 같은 결측 처리 없이 모든 변수를 그대로 분석에 사용할 수 있다. 데이터 완전성 측면에서는 추가 작업이 불필요하다.
+
+# 데이터 분포
+
+## 히스토그램 (밀도곡선 포함)
+
+```{r histograms, fig.height=7}
+df_num %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "value") %>%
+  ggplot(aes(x = value)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 bins = 20, fill = "#5b9bd5", color = "white", alpha = 0.8) +
+  geom_density(color = "#c00000", linewidth = 0.9) +
+  facet_wrap(~variable, scales = "free", ncol = 2) +
+  labs(title = "Histogram with Density Curve by Variable", x = NULL, y = "Density")
+```
+
+## 박스플롯 (이상치 점검)
+
+스케일이 다르므로 각 변수를 표준화(z-score)해 한 그림에서 비교한다.
+
+```{r boxplots, fig.height=5}
+df_num %>%
+  mutate(across(everything(), ~as.numeric(scale(.)))) %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "z") %>%
+  ggplot(aes(x = variable, y = z, fill = variable)) +
+  geom_boxplot(alpha = 0.7, outlier.color = "#c00000") +
+  labs(title = "Standardized (z-score) Boxplot", x = NULL, y = "z-score") +
+  theme(legend.position = "none")
+```
+
+## 정규성 점검 (Q-Q plot)
+
+```{r qqplots, fig.height=7}
+df_num %>%
+  pivot_longer(everything(), names_to = "variable", values_to = "value") %>%
+  ggplot(aes(sample = value)) +
+  stat_qq(color = "#5b9bd5", size = 1) +
+  stat_qq_line(color = "#c00000") +
+  facet_wrap(~variable, scales = "free", ncol = 2) +
+  labs(title = "Normal Q-Q Plot", x = "Theoretical Quantiles", y = "Sample Quantiles")
+```
+
+> **해석 — 분포·이상치.** 오염변수들은 대체로 단봉이면서 오른쪽으로 약간 긴 꼬리를 보이고, 관광객 수는 넓게 퍼진(이봉에 가까운) 분포를 보인다. Q-Q plot에서 오염변수는 중앙부가 직선에 가깝지만 양 끝에서 벗어나 완전한 정규성은 아니며, 관광객 수는 정규선에서 뚜렷이 이탈한다. 박스플롯에서 관광객 수의 저점(코로나 구간)이 이상치로 잡힐 수 있으나, 이는 측정 오류가 아니라 실제 사건이므로 제거보다는 해석에 반영하는 편이 적절하다. 후속 모형에서 오염변수는 필요 시 **로그변환**, 관광객 수는 **코로나 더미 또는 구간 분리**를 고려할 수 있다.
+
+# 상관관계
+
+## 상관계수 행렬
+
+결측치는 쌍별 제거(`use = "pairwise.complete.obs"`)로 처리한다.
+
+```{r cor-matrix}
+cor_mat <- cor(df_num, use = "pairwise.complete.obs", method = "pearson")
+round(cor_mat, 3)
+```
+
+## 상관 히트맵 (corrplot)
+
+```{r corrplot, fig.height=7}
+corrplot(cor_mat,
+         method = "color",
+         type = "upper",
+         addCoef.col = "black",
+         tl.col = "black", tl.srt = 45,
+         col = colorRampPalette(c("#2166ac", "white", "#b2182b"))(200),
+         diag = FALSE,
+         number.cex = 0.9,
+         title = "Correlation Heatmap (Pearson)",
+         mar = c(0, 0, 2, 0))
+```
+
+## 상관 히트맵 (ggplot 버전)
+
+```{r cor-ggplot, fig.height=6}
+cor_mat %>%
+  reshape2::melt() %>%
+  ggplot(aes(Var1, Var2, fill = value)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(value, 2)), size = 3.5) +
+  scale_fill_gradient2(low = "#2166ac", mid = "white", high = "#b2182b",
+                       midpoint = 0, limits = c(-1, 1), name = "r") +
+  labs(title = "Correlation Heatmap", x = NULL, y = NULL) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+> **해석 — 상관관계 (핵심)**
+>
+> - **오염변수끼리 강하게 묶여 있다(다중공선성).** pm25↔pm10 = **0.88**, pm25↔co = **0.80**, pm25↔so2 = 0.71, co↔so2 = 0.65, pm10↔co = 0.62, pm10↔so2 = 0.62 로 0.6~0.9의 높은 양의 상관을 보인다. 겨울철 난방·배출 증가, 대기 정체 등 **공통 계절 요인**에 함께 움직이기 때문이다. 다변량 회귀에 이들을 동시에 넣으면 다중공선성 문제가 생기므로, **VIF 점검 후 변수 축소** 또는 **PCA/요인분석으로 종합 오염지표** 구성을 권한다.
+> - **오존(o3)은 반대로 움직인다.** o3↔co = **-0.61**, o3↔pm25 = -0.26 으로 음의 상관이다. 오존은 광화학 반응·여름 일사량에 의존해 다른 1차 오염물질과 계절 패턴이 반대라서다. 따라서 o3는 별개의 정보를 담고 있어 독립 변수로 유지할 가치가 있다.
+> - **관광객 수와 오염변수의 관계는 약하다.** so2 = 0.33 (가장 높음), pm25 = 0.18, pm10 = 0.14, co = 0.12, o3 = -0.03(사실상 무상관)이다. 즉 개별 오염변수만으로 관광객 수를 설명하기 어렵다. so2의 약한 양의 상관도 인과라기보다 **따뜻한 계절에 관광객과 so2가 함께 변동하는 공통 계절성**의 영향으로 보는 것이 타당하다.
+
+# 산점도
+
+## 산점도 행렬 (ggpairs)
+
+대각선은 분포(밀도), 하단은 산점도+추세선, 상단은 상관계수를 표시한다.
+
+```{r ggpairs, fig.height=9, fig.width=10}
+ggpairs(df_num,
+        lower = list(continuous = wrap("smooth", alpha = 0.5, size = 0.8,
+                                       color = "#5b9bd5")),
+        diag  = list(continuous = wrap("densityDiag", fill = "#5b9bd5", alpha = 0.5)),
+        upper = list(continuous = wrap("cor", size = 4))) +
+  labs(title = "Scatterplot Matrix") +
+  theme(strip.text = element_text(size = 9))
+```
+
+## 종속변수(tourists) 대 각 오염변수 산점도
+
+관심 대상인 `tourists` 와 오염변수 5개의 관계를 개별 산점도 + 선형 회귀선으로 본다.
+
+```{r scatter-target, fig.height=7}
+df_num %>%
+  pivot_longer(-tourists, names_to = "pollutant", values_to = "value") %>%
+  ggplot(aes(x = value, y = tourists)) +
+  geom_point(alpha = 0.6, color = "#5b9bd5") +
+  geom_smooth(method = "lm", se = TRUE, color = "#c00000") +
+  facet_wrap(~pollutant, scales = "free_x", ncol = 2) +
+  scale_y_continuous(labels = comma) +
+  labs(title = "Tourists vs Air Pollutants",
+       x = "Pollutant Value", y = "Tourists")
+```
+
+> **해석 — 산점도.** 산점도 행렬에서 오염변수들끼리는 점들이 우상향 직선에 가깝게 모여 강한 양의 관계를 재확인할 수 있다. 반면 관광객 수 대 오염변수 산점도는 회귀선 기울기가 완만하고(so2만 약간 가파름) 점들의 산포가 커서, **단일 오염변수로는 관광객 수 변동을 설명하기 어렵다**는 상관 분석 결과와 일치한다.
+
+# 종합 및 다음 단계 제언
+
+1. **데이터 품질**: 결측치 0개 — 추가 정제 불필요.
+2. **관광객 수**: 코로나 충격으로 좌편향·고변동(CV 0.61, 왜도 -0.50, 최솟값 29,415명) → 코로나 더미 또는 기간 분리, 정상성 점검 필요.
+3. **다중공선성**: 오염변수들이 강하게 얽힘(최강 쌍 pm25↔pm10 = 0.88) → 회귀 전 VIF 확인, PCA/요인분석으로 차원 축소 고려.
+4. **오존의 독립성**: o3는 다른 변수와 음의 관계(co와 -0.61) → 별도 변수로 유지.
+5. **관광-오염 직접 관계 약함**: 단순 상관 설명력 낮음(최대 so2 0.33) → 계절성·추세를 통제한 모형(시차변수, 계절 더미, 다변량 시계열 등)으로 확장 권장.
+
+> 필요 패키지: `tidyverse, lubridate, GGally, corrplot, psych, reshape2, scales, showtext`
+> 설치: `install.packages(c("tidyverse","lubridate","GGally","corrplot","psych","reshape2","scales","showtext"))`
